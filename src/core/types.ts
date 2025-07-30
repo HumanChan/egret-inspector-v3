@@ -37,6 +37,14 @@ export interface ResponseSupportData {
    * 消息
    */
   msg: string;
+  /**
+   * 引擎版本号
+   */
+  version?: string;
+  /**
+   * 引擎类型
+   */
+  engineType?: string;
 }
 
 export type ResponseUpdateFramesData = any[]; // 暂时使用 any[]，后续根据 Egret 引擎数据结构定义

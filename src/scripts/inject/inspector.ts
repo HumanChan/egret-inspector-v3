@@ -80,7 +80,15 @@ export class Inspector extends InjectEvent {
   }
 
   notifySupportGame(b: boolean) {
-    this.sendMsgToContent(Msg.ResponseSupport, { support: b, msg: "" } as ResponseSupportData);
+    const version = this._getEgretVersion();
+    const engineType = 'egret';
+    
+    this.sendMsgToContent(Msg.ResponseSupport, { 
+      support: b, 
+      msg: "", 
+      version: version,
+      engineType: engineType
+    } as ResponseSupportData);
   }
 
   updateTreeInfo() {
@@ -102,6 +110,28 @@ export class Inspector extends InjectEvent {
       return !!(window.egret && (window.egret.Sprite || window.egret.getQualifiedClassName));
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * 获取白鹭引擎版本号
+   */
+  _getEgretVersion(): string {
+    try {
+      if (!window.egret) {
+        return 'unknown';
+      }
+
+      const egret = window.egret;
+      
+      if (egret.Capabilities && egret.Capabilities.engineVersion) {
+        return egret.Capabilities.engineVersion;
+      }
+      
+      return 'unknown';
+    } catch (error) {
+      console.warn('Failed to get Egret version:', error);
+      return 'unknown';
     }
   }
 
