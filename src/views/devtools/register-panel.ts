@@ -1,32 +1,63 @@
-import CCP from "cc-plugin/src/ccp/entry-render";
-import { ChromeConst } from "cc-plugin/src/chrome/const";
+import { bridge } from "./bridge";
+import { Msg } from "../../core/types";
 
-export function init() {
-  if (chrome && chrome.devtools) {
-    // 创建devtools-panel
-    let iconPath = "";
-    const { icon } = CCP.manifest;
-    if (icon && icon["48"]) {
-      iconPath = icon["48"];
-    }
-    
-    chrome.devtools.panels.create(CCP.manifest.name, iconPath, ChromeConst.html.devtools, (panel: chrome.devtools.panels.ExtensionPanel) => {
-      console.log("[Hello World Extension] DevTools Panel Created!");
+/**
+ * 注册 DevTools 面板
+ */
+export function registerPanel() {
+  // 创建面板
+  chrome.devtools.panels.create(
+    "Egret Inspector",
+    "icons/48.png",
+    "views/devtools/index.html",
+    (panel) => {
+      console.log("Egret Inspector panel created");
       
+      // 面板显示时的处理
       panel.onShown.addListener((window) => {
-        // 面板显示
-        console.log("DevTools Panel shown");
+        console.log("Egret Inspector panel shown");
+        // 可以在这里发送初始化消息
+        bridge.send(Msg.RequestSupport, {});
       });
       
+      // 面板隐藏时的处理
       panel.onHidden.addListener(() => {
-        // 面板隐藏
-        console.log("DevTools Panel hidden");
+        console.log("Egret Inspector panel hidden");
       });
-      
-      panel.onSearch.addListener(function (action, query) {
-        // ctrl+f 查找触发
-        console.log("DevTools Panel search:", action, query);
-      });
-    });
-  }
+    }
+  );
+}
+
+/**
+ * 初始化 DevTools
+ */
+export function init() {
+  console.log("Initializing Egret Inspector DevTools...");
+  
+  // 注册面板
+  registerPanel();
+  
+  // 监听消息
+  bridge.on(Msg.ResponseSupport, (data) => {
+    console.log("Support response received:", data);
+  });
+  
+  bridge.on(Msg.ResponseTreeInfo, (data) => {
+    console.log("Tree info response received:", data);
+  });
+  
+  bridge.on(Msg.ResponseNodeInfo, (data) => {
+    console.log("Node info response received:", data);
+  });
+  
+  bridge.on(Msg.ResponseError, (data) => {
+    console.error("Error response received:", data);
+  });
+  
+  console.log("Egret Inspector DevTools initialized");
+}
+
+// 自动初始化
+if (chrome.devtools) {
+  init();
 } 

@@ -1,383 +1,270 @@
 <template>
-  <div class="devtools-panel">
+  <div id="egret-inspector-panel">
     <div class="header">
-      <h2>{{ title }}</h2>
-      <p>{{ description }}</p>
+      <h1>Egret Inspector</h1>
+      <div class="status">
+        <span :class="['status-indicator', connectionStatus]">
+          {{ connectionStatusText }}
+        </span>
+      </div>
     </div>
     
     <div class="content">
-      <!-- 引擎信息显示 -->
-      <div class="engine-info" v-if="engineDetected">
-        <h3>🎮 Egret Engine Detected</h3>
-        <div class="engine-details">
-          <p><strong>Engine Type:</strong> {{ engineInfo.type }}</p>
-          <p><strong>Version:</strong> {{ engineInfo.version }}</p>
-          <p><strong>Features:</strong> {{ engineInfo.features.join(', ') }}</p>
-          <p><strong>Detection Time:</strong> {{ formatTime(engineInfo.timestamp) }}</p>
+      <div class="section">
+        <h2>Engine Detection</h2>
+        <div class="engine-info">
+          <p v-if="engineDetected">
+            <strong>Egret Engine Detected</strong><br>
+            Version: {{ engineVersion }}<br>
+            Type: {{ engineType }}
+          </p>
+          <p v-else>
+            <strong>No Egret Engine Detected</strong><br>
+            Please refresh the page or check if the game is loaded.
+          </p>
         </div>
       </div>
       
-      <!-- 未检测到引擎时的显示 -->
-      <div class="no-engine" v-else>
-        <h3>🔍 Engine Detection</h3>
-        <p>No Egret engine detected on this page.</p>
-        <p>Please make sure you're on a page with an Egret game.</p>
+      <div class="section">
+        <h2>Actions</h2>
+        <div class="actions">
+          <button @click="requestSupport" :disabled="!isConnected">
+            Check Support
+          </button>
+          <button @click="requestTreeInfo" :disabled="!isConnected">
+            Get Tree Info
+          </button>
+        </div>
       </div>
       
-      <div class="status-info">
-        <h3>📊 Status Information</h3>
-        <p><strong>Connection Status:</strong> {{ connectionStatus }}</p>
-        <p><strong>Last Update:</strong> {{ lastUpdateTime }}</p>
+      <div class="section" v-if="treeData">
+        <h2>Tree Data</h2>
+        <div class="tree-info">
+          <p>Nodes: {{ treeData.nodes?.length || 0 }}</p>
+          <p>Timestamp: {{ new Date(treeData.timestamp).toLocaleString() }}</p>
+        </div>
       </div>
       
-      <div class="interactions">
-        <CCButton @click="refreshEngineInfo" type="primary" :disabled="!engineDetected">
-          Refresh Engine Info
-        </CCButton>
-        
-        <CCButton @click="toggleTheme" type="secondary">
-          {{ themeButtonText }}
-        </CCButton>
-      </div>
-      
-      <div class="info">
-        <p><strong>{{ infoLabel }}:</strong> {{ extensionInfo }}</p>
-        <p><strong>{{ versionLabel }}:</strong> {{ version }}</p>
-        <p><strong>{{ panelTypeLabel }}:</strong> {{ panelType }}</p>
+      <div class="section" v-if="errorMessage">
+        <h2>Error</h2>
+        <div class="error">
+          {{ errorMessage }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import ccui from "@xuyanfeng/cc-ui";
-import { defineComponent, ref, onMounted, onUnmounted } from "vue";
-import PluginConfig from "../../../cc-plugin.config";
-
-const { CCButton } = ccui.components;
-
-interface EngineInfo {
-  type: 'egret' | 'lark' | null;
-  version: string;
-  features: string[];
-  timestamp: number;
-}
+import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
+import { bridge } from './bridge';
+import { Msg } from '../../core/types';
 
 export default defineComponent({
-  name: "DevtoolsPanel",
-  components: { CCButton },
+  name: 'EgretInspectorPanel',
   setup() {
-    const count = ref(0);
-    const isDarkTheme = ref(false);
-    const currentTime = ref("");
-    const title = ref("Egret Inspector");
-    const description = ref("Chrome DevTools extension for Egret Engine debugging");
-    const greeting = ref("Egret Inspector is ready!");
-    const buttonText = ref("Click Me");
-    const themeButtonText = ref("Toggle Theme");
-    const infoLabel = ref("Extension Name");
-    const versionLabel = ref("Version");
-    const panelTypeLabel = ref("Panel Type");
-    const extensionInfo = ref(PluginConfig.manifest.name);
-    const version = ref(PluginConfig.manifest.version);
-    const panelType = ref("DevTools Panel");
-    
-    // 引擎信息相关
+    const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('connecting');
+    const connectionStatusText = ref('Connecting...');
+    const isConnected = ref(false);
     const engineDetected = ref(false);
-    const engineInfo = ref<EngineInfo>({
-      type: null,
-      version: 'unknown',
-      features: [],
-      timestamp: 0
-    });
-    const connectionStatus = ref('Disconnected');
-    const lastUpdateTime = ref('Never');
-    
-    let timer: NodeJS.Timeout;
-    let port: chrome.runtime.Port | null = null;
+    const engineVersion = ref('unknown');
+    const engineType = ref('unknown');
+    const treeData = ref(null);
+    const errorMessage = ref('');
 
-    const updateTime = () => {
-      currentTime.value = new Date().toLocaleString();
-    };
-
-    const formatTime = (timestamp: number) => {
-      return new Date(timestamp).toLocaleString();
-    };
-
-    const refreshEngineInfo = () => {
-      if (port) {
-        const message = {
-          type: 'debug',
-          data: { action: 'getEngineInfo' },
-          id: Date.now().toString(),
-          timestamp: Date.now(),
-          source: 'devtools'
-        };
-        
-        console.log('DevTools sending getEngineInfo request:', message);
-        port.postMessage(message);
-      } else {
-        console.warn('DevTools port not connected');
-        connectionStatus.value = 'Disconnected';
+    const updateConnectionStatus = (status: 'connected' | 'disconnected' | 'connecting') => {
+      connectionStatus.value = status;
+      isConnected.value = status === 'connected';
+      
+      switch (status) {
+        case 'connected':
+          connectionStatusText.value = 'Connected';
+          break;
+        case 'disconnected':
+          connectionStatusText.value = 'Disconnected';
+          break;
+        case 'connecting':
+          connectionStatusText.value = 'Connecting...';
+          break;
       }
     };
 
-    const toggleTheme = () => {
-      isDarkTheme.value = !isDarkTheme.value;
-      themeButtonText.value = isDarkTheme.value ? "Light Theme" : "Dark Theme";
-      console.log(`DevTools Panel: Theme toggled to ${isDarkTheme.value ? 'dark' : 'light'}`);
+    const requestSupport = () => {
+      bridge.send(Msg.RequestSupport, {});
     };
 
-    const connectToBackground = () => {
-      try {
-        port = chrome.runtime.connect({ name: 'egret-inspector-devtools' });
-        
-        port.onMessage.addListener((message) => {
-          console.log('DevTools received message:', message);
-          
-          if (message.type === 'detect' && message.data) {
-            // 处理引擎检测消息
-            if (message.data.detected) {
-              engineDetected.value = true;
-              engineInfo.value = {
-                type: message.data.engineType || 'egret',
-                version: message.data.version || 'unknown',
-                features: message.data.features || [],
-                timestamp: message.data.timestamp || Date.now()
-              };
-              connectionStatus.value = 'Connected';
-              lastUpdateTime.value = new Date().toLocaleString();
-            }
-          }
-          
-          if (message.type === 'response' && message.data) {
-            // 处理响应消息
-            if (message.data.engineInfo) {
-              engineDetected.value = true;
-              engineInfo.value = message.data.engineInfo;
-              connectionStatus.value = 'Connected';
-              lastUpdateTime.value = new Date().toLocaleString();
-            } else if (message.data.detected !== undefined) {
-              // 处理检测结果响应
-              engineDetected.value = message.data.detected;
-              if (message.data.engineInfo) {
-                engineInfo.value = message.data.engineInfo;
-              }
-              connectionStatus.value = 'Connected';
-              lastUpdateTime.value = new Date().toLocaleString();
-            }
-          }
-          
-          if (message.type === 'debug' && message.data) {
-            // 处理调试消息
-            console.log('Debug message received:', message.data);
-          }
-        });
-        
-        port.onDisconnect.addListener(() => {
-          console.log('DevTools port disconnected');
-          connectionStatus.value = 'Disconnected';
-          port = null;
-        });
-        
-        connectionStatus.value = 'Connecting...';
-        console.log('DevTools connected to background script');
-      } catch (error) {
-        console.error('Failed to connect to background script:', error);
-        connectionStatus.value = 'Connection Failed';
+    const requestTreeInfo = () => {
+      bridge.send(Msg.RequstTreeInfo, { frameID: 0 });
+    };
+
+    const handleSupportResponse = (data: any) => {
+      console.log('Support response:', data);
+      if (data.data) {
+        engineDetected.value = data.data.support;
+        if (data.data.support) {
+          engineVersion.value = data.data.version || 'unknown';
+          engineType.value = data.data.engineType || 'egret';
+        }
       }
+    };
+
+    const handleTreeInfoResponse = (data: any) => {
+      console.log('Tree info response:', data);
+      if (data.data) {
+        treeData.value = data.data;
+      }
+    };
+
+    const handleErrorResponse = (data: any) => {
+      console.error('Error response:', data);
+      errorMessage.value = data.data || 'Unknown error occurred';
     };
 
     onMounted(() => {
-      console.log("Egret Inspector DevTools Panel mounted!");
-      updateTime();
-      timer = setInterval(updateTime, 1000);
+      console.log('Egret Inspector Panel mounted');
       
-      // 连接到后台脚本
-      connectToBackground();
+      // 监听消息
+      bridge.on(Msg.ResponseSupport, handleSupportResponse);
+      bridge.on(Msg.ResponseTreeInfo, handleTreeInfoResponse);
+      bridge.on(Msg.ResponseError, handleErrorResponse);
       
-      // 延迟获取引擎信息，确保连接建立
+      // 更新连接状态
+      updateConnectionStatus('connected');
+      
+      // 自动请求支持状态
       setTimeout(() => {
-        if (port) {
-          refreshEngineInfo();
-        }
+        requestSupport();
       }, 1000);
     });
 
     onUnmounted(() => {
-      if (timer) {
-        clearInterval(timer);
-      }
-      if (port) {
-        port.disconnect();
-      }
+      console.log('Egret Inspector Panel unmounted');
     });
 
     return {
-      count,
-      isDarkTheme,
-      currentTime,
-      title,
-      description,
-      greeting,
-      buttonText,
-      themeButtonText,
-      infoLabel,
-      versionLabel,
-      panelTypeLabel,
-      extensionInfo,
-      version,
-      panelType,
-      engineDetected,
-      engineInfo,
       connectionStatus,
-      lastUpdateTime,
-      toggleTheme,
-      refreshEngineInfo,
-      formatTime,
+      connectionStatusText,
+      isConnected,
+      engineDetected,
+      engineVersion,
+      engineType,
+      treeData,
+      errorMessage,
+      requestSupport,
+      requestTreeInfo
     };
-  },
+  }
 });
 </script>
 
-<style scoped lang="less">
-.devtools-panel {
-  padding: 20px;
+<style scoped>
+#egret-inspector-panel {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f5f5f5;
-  height: 100vh;
-  overflow-y: auto;
-  
-  .header {
-    text-align: center;
-    margin-bottom: 30px;
-    
-    h2 {
-      color: #333;
-      margin: 0 0 10px 0;
-      font-size: 24px;
-    }
-    
-    p {
-      color: #666;
-      margin: 0;
-      font-size: 14px;
-    }
-  }
-  
-  .content {
-    .engine-info {
-      background: #e8f5e8;
-      border: 2px solid #4caf50;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      
-      h3 {
-        color: #2e7d32;
-        margin: 0 0 15px 0;
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      
-      .engine-details {
-        p {
-          margin: 8px 0;
-          font-size: 14px;
-          color: #333;
-          
-          strong {
-            color: #2e7d32;
-            min-width: 120px;
-            display: inline-block;
-          }
-        }
-      }
-    }
-    
-    .no-engine {
-      background: #fff3cd;
-      border: 2px solid #ffc107;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      text-align: center;
-      
-      h3 {
-        color: #856404;
-        margin: 0 0 15px 0;
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-      
-      p {
-        color: #856404;
-        margin: 5px 0;
-        font-size: 14px;
-      }
-    }
-    
-    .status-info {
-      background: #e3f2fd;
-      border: 2px solid #2196f3;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
-      
-      h3 {
-        color: #1976d2;
-        margin: 0 0 15px 0;
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      
-      p {
-        margin: 8px 0;
-        font-size: 14px;
-        color: #333;
-        
-        strong {
-          color: #1976d2;
-          min-width: 120px;
-          display: inline-block;
-        }
-      }
-    }
-    
-    .interactions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 30px;
-      
-      button {
-        min-width: 120px;
-      }
-    }
-    
-    .info {
-      background: #f3e5f5;
-      padding: 15px;
-      border-radius: 6px;
-      border-left: 4px solid #9c27b0;
-      
-      p {
-        margin: 5px 0;
-        font-size: 13px;
-        color: #333;
-        
-        strong {
-          color: #7b1fa2;
-        }
-      }
-    }
-  }
+  padding: 16px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.status-indicator {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-indicator.connected {
+  background: #4caf50;
+  color: white;
+}
+
+.status-indicator.disconnected {
+  background: #f44336;
+  color: white;
+}
+
+.status-indicator.connecting {
+  background: #ff9800;
+  color: white;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section h2 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.engine-info p {
+  margin: 8px 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.actions button:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tree-info p {
+  margin: 4px 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.error {
+  color: #f44336;
+  font-size: 12px;
+  padding: 8px;
+  background: #ffebee;
+  border-radius: 4px;
+  border-left: 4px solid #f44336;
 }
 </style> 
