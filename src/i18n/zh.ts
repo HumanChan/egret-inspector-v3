@@ -1,0 +1,14 @@
+export const title = "Egret Inspector";
+export const description = "白鹭游戏引擎调试工具";
+export const greeting = "欢迎使用 Egret Inspector！";
+export const buttonText = "点击我";
+export const themeButtonText = "切换主题";
+export const lightTheme = "浅色主题";
+export const darkTheme = "深色主题";
+export const infoLabel = "扩展名称";
+export const versionLabel = "版本";
+export const devtoolsTitle = "Egret Inspector 开发者工具";
+export const devtoolsDescription = "白鹭游戏引擎的 Chrome 开发者工具面板";
+export const devtoolsGreeting = "来自 Egret Inspector 的问候！";
+export const panelTypeLabel = "面板类型";
+export const devtoolsPanelType = "开发者工具面板"; 

@@ -1,0 +1,31 @@
+{
+  "name": "egret-inspector",
+  "version": "1.0.0",
+  "description": "A Chrome extension debug tool for Egret Engine, providing real-time debugging and performance monitoring for Egret game developers",
+  "author": "Egret Inspector Team",
+  "main": "./src/main.ts",
+  "scripts": {
+    "installForce": "yarn install --force",
+    "ccp-pack-chrome": "cc-plugin pack chrome",
+    "ccp-serve-chrome": "cc-plugin serve chrome",
+    "build": "cc-plugin pack chrome",
+    "dev": "cc-plugin serve chrome"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.0.133",
+    "@types/fs-extra": "9.0.1",
+    "@types/kind-of": "^6.0.0",
+    "@types/lodash": "^4.14.176",
+    "@types/node": "16.11.12",
+    "@types/uuid": "^8.3.1",
+    "@xuyanfeng/cc-ui": "^0.3.0",
+    "cc-plugin": "^2.3.3",
+    "css-loader": "^7.1.2",
+    "ts-loader": "^9.5.2"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "tiny-emitter": "2.1.0",
+    "uuid": "^8.3.2"
+  }
+} 

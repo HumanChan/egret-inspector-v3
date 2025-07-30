@@ -1,0 +1,14 @@
+export const title = "Egret Inspector";
+export const description = "Egret Engine Debug Tool";
+export const greeting = "Welcome to Egret Inspector!";
+export const buttonText = "Click Me";
+export const themeButtonText = "Toggle Theme";
+export const lightTheme = "Light Theme";
+export const darkTheme = "Dark Theme";
+export const infoLabel = "Extension Name";
+export const versionLabel = "Version";
+export const devtoolsTitle = "Egret Inspector DevTools";
+export const devtoolsDescription = "Chrome DevTools panel for Egret Engine";
+export const devtoolsGreeting = "Hello from Egret Inspector!";
+export const panelTypeLabel = "Panel Type";
+export const devtoolsPanelType = "DevTools Panel"; 
