@@ -173,12 +173,27 @@ function setupMessageHandlers(): void {
   // 处理调试消息
   communicationManager.onMessage('debug', async (message: Message) => {
     try {
-      // 转发给注入脚本
-      window.postMessage({
-        type: 'egret-inspector-debug',
-        data: message.data,
-        id: message.id
-      }, '*');
+      if (message.data?.action === 'getEngineInfo') {
+        // 处理获取引擎信息的请求
+        const engineInfo = {
+          type: engineDetected ? 'egret' : null,
+          version: engineDetected ? await egretDetector.getEngineVersion() : 'unknown',
+          features: engineDetected ? await egretDetector.getEngineFeatures() : [],
+          timestamp: Date.now()
+        };
+        
+        await communicationManager.sendResponseMessage(message.id, {
+          engineInfo,
+          detected: engineDetected
+        }, 'content');
+      } else {
+        // 转发给注入脚本
+        window.postMessage({
+          type: 'egret-inspector-debug',
+          data: message.data,
+          id: message.id
+        }, '*');
+      }
     } catch (error) {
       await communicationManager.sendErrorMessage(error as Error, 'content');
     }

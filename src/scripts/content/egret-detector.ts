@@ -59,6 +59,14 @@ export class EgretDetector {
   }
 
   /**
+   * 获取引擎特性
+   */
+  async getEngineFeatures(): Promise<string[]> {
+    const engineInfo = await this.getEngineInfo();
+    return engineInfo?.features || [];
+  }
+
+  /**
    * 等待引擎加载完成
    */
   async waitForEngine(): Promise<boolean> {

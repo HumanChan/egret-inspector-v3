@@ -273,8 +273,13 @@ function handleInjectionMessage(message: Message, port: chrome.runtime.Port): vo
 function handleDebugMessage(message: Message, port: chrome.runtime.Port): void {
   console.log("Handling debug message:", message.data);
   
-  // 转发给DevTools
-  forwardToDevtools(message);
+  if (message.source === 'devtools' && message.data?.action === 'getEngineInfo') {
+    // 转发给内容脚本获取引擎信息
+    forwardToContentScript(message);
+  } else {
+    // 转发给DevTools
+    forwardToDevtools(message);
+  }
 }
 
 /**
