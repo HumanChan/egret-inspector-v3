@@ -170,7 +170,3 @@ export class Inspector extends InjectEvent {
     }
   }
 }
-
-// 创建全局实例并初始化
-const inspector = new Inspector();
-inspector.init(); 
