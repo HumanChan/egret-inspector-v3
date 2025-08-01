@@ -12,23 +12,21 @@ export abstract class PortMan {
   public tabID: number | null = null;
   public title: string = "";
   public url: string = "";
-  public port: chrome.runtime.Port | null = null;
+  protected port: chrome.runtime.Port | null = null;
   public tab: chrome.tabs.Tab | null = null;
   public onDisconnect: (port: chrome.runtime.Port) => void | null = null;
   public onMessage: (data: PluginEvent) => void | null = null;
   public terminal: Terminal = null;
   public timestamp: number = 0;
-  
   constructor(tab: chrome.tabs.Tab, port: chrome.runtime.Port) {
     this.timestamp = Date.now();
     this.port = port;
     this.tab = tab;
     this.name = port.name;
-    this.tabID = tab.id || null;
-    this.url = port.sender?.url || "";
-    this.title = tab.title || "";
+    this.tabID = tab.id;
+    this.url = port.sender.url;
+    this.title = tab.title;
     this.terminal = new Terminal(`Port-${this.name}`);
-    
     port.onMessage.addListener((data: any, port: chrome.runtime.Port) => {
       const event = PluginEvent.create(data);
       debugLog && console.log(...this.terminal.chunkMessage(event.toChunk()));
@@ -38,7 +36,6 @@ export abstract class PortMan {
         debugLog && console.log(...this.terminal.log(JSON.stringify(data)));
       }
     });
-    
     port.onDisconnect.addListener((port: chrome.runtime.Port) => {
       debugLog && console.log(...this.terminal.disconnect(""));
       if (this.onDisconnect) {
@@ -46,17 +43,14 @@ export abstract class PortMan {
       }
     });
   }
-  
   abstract init(): void;
 
   isContent() {
     return this.name === Page.Content;
   }
-  
   isDevtools() {
     return this.name === Page.Devtools;
   }
-  
   isUseing(id: number) {
     if (!this.port) {
       return false;
@@ -69,10 +63,9 @@ export abstract class PortMan {
     }
     return this.port.sender.frameId === id;
   }
-  
   send(data: PluginEvent) {
     if (this.port) {
       this.port.postMessage(data);
     }
   }
-} 
+}

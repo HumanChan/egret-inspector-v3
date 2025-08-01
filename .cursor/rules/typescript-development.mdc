@@ -1,0 +1,460 @@
+---
+alwaysApply: true
+---
+
+# TypeScript 开发规范
+
+## 类型定义
+
+### 严格类型检查
+- 启用 TypeScript 严格模式
+- 避免使用 `any` 类型，优先使用具体类型
+- 为所有函数参数和返回值定义类型
+- 使用接口定义对象结构
+
+### 消息类型定义
+参考 [const.ts](mdc:src/scripts/const.ts) 中的消息类型定义：
+
+```typescript
+export enum Msg {
+  RequestSupport = "request-support",
+  ResponseSupport = "response-support",
+  // ... 其他消息类型
+}
+```
+
+### 接口定义
+为所有数据结构定义接口：
+
+```typescript
+interface NodeInfo {
+  id: string;
+  name: string;
+  type: string;
+  properties: Record<string, any>;
+}
+```
+
+## 代码组织
+
+### 模块化设计
+- 使用 ES6 模块语法 (`import`/`export`)
+- 每个文件只负责一个主要功能
+- 避免循环依赖
+- 使用命名空间组织相关功能
+
+### 文件命名
+- 使用 kebab-case 命名文件
+- 组件文件使用 PascalCase
+- 类型定义文件以 `.types.ts` 结尾
+- 工具文件以 `.util.ts` 结尾
+
+## 异步处理
+
+### Promise 和 Async/Await
+- 优先使用 async/await 语法
+- 正确处理 Promise 错误
+- 使用 try-catch 包装异步操作
+- 避免 Promise 地狱
+
+### 错误处理
+```typescript
+async function handleMessage(msg: Message): Promise<void> {
+  try {
+    const result = await processMessage(msg);
+    return result;
+  } catch (error) {
+    console.error('Message processing failed:', error);
+    throw new Error(`Failed to process message: ${error.message}`);
+  }
+}
+```
+
+## 通信模式
+
+### 消息路由
+- 所有消息必须通过 Background Script 路由
+- 使用类型安全的消息传递
+- 实现消息验证和错误处理
+- 支持消息重试机制
+
+### 端口管理
+参考 [portMgr.ts](mdc:src/scripts/background/portMgr.ts) 的端口管理模式：
+
+```typescript
+class PortManager {
+  private ports: Map<string, Port> = new Map();
+  
+  addPort(id: string, port: Port): void {
+    this.ports.set(id, port);
+  }
+  
+  removePort(id: string): void {
+    this.ports.delete(id);
+  }
+}
+```
+
+## 性能优化
+
+### 内存管理
+- 及时清理事件监听器
+- 避免内存泄漏
+- 使用 WeakMap/WeakSet 存储对象引用
+- 实现对象池模式
+
+### 缓存策略
+```typescript
+class CacheManager<T> {
+  private cache = new Map<string, T>();
+  private maxSize: number;
+  
+  constructor(maxSize: number = 100) {
+    this.maxSize = maxSize;
+  }
+  
+  get(key: string): T | undefined {
+    return this.cache.get(key);
+  }
+  
+  set(key: string, value: T): void {
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    this.cache.set(key, value);
+  }
+}
+```
+
+## 调试支持
+
+### 日志系统
+```typescript
+enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3
+}
+
+class Logger {
+  private level: LogLevel = LogLevel.INFO;
+  
+  debug(message: string, ...args: any[]): void {
+    if (this.level <= LogLevel.DEBUG) {
+      console.debug(`[DEBUG] ${message}`, ...args);
+    }
+  }
+  
+  error(message: string, error?: Error): void {
+    if (this.level <= LogLevel.ERROR) {
+      console.error(`[ERROR] ${message}`, error);
+    }
+  }
+}
+```
+
+### 类型守卫
+```typescript
+function isNodeInfo(obj: any): obj is NodeInfo {
+  return obj && 
+         typeof obj.id === 'string' && 
+         typeof obj.name === 'string' &&
+         typeof obj.type === 'string';
+}
+```
+
+## 测试规范
+
+### 单元测试
+- 为所有公共函数编写测试
+- 使用 Jest 或 Vitest 测试框架
+- 测试覆盖率应达到 80% 以上
+- 模拟外部依赖
+
+### 集成测试
+- 测试组件间通信
+- 验证消息路由正确性
+- 测试错误处理机制
+- 验证性能指标
+
+## 代码质量
+
+### ESLint 配置
+- 使用严格的 ESLint 规则
+- 启用 TypeScript 相关规则
+- 配置 Prettier 格式化
+- 使用 husky 进行提交前检查
+
+### 注释规范
+```typescript
+/**
+ * 处理节点信息请求
+ * @param nodeId 节点ID
+ * @param callback 回调函数
+ * @returns Promise<NodeInfo>
+ */
+async function handleNodeInfoRequest(
+  nodeId: string, 
+  callback: (info: NodeInfo) => void
+): Promise<NodeInfo> {
+  // 实现逻辑
+}
+```
+
+## 安全考虑
+
+### 输入验证
+```typescript
+function validateMessage(msg: any): msg is Message {
+  return msg && 
+         typeof msg.type === 'string' &&
+         typeof msg.data === 'object';
+}
+```
+
+### 权限检查
+```typescript
+function checkPermission(operation: string, context: Context): boolean {
+  // 实现权限检查逻辑
+  return true;
+}
+```
+
+## 最佳实践
+
+1. **类型优先**: 始终定义明确的类型
+2. **错误处理**: 实现完整的错误处理机制
+3. **性能考虑**: 避免不必要的计算和内存分配
+4. **可维护性**: 编写清晰、可读的代码
+5. **测试驱动**: 先写测试，再写实现
+6. **文档完整**: 为所有公共 API 编写文档
+# TypeScript 开发规范
+
+## 类型定义
+
+### 严格类型检查
+- 启用 TypeScript 严格模式
+- 避免使用 `any` 类型，优先使用具体类型
+- 为所有函数参数和返回值定义类型
+- 使用接口定义对象结构
+
+### 消息类型定义
+参考 [const.ts](mdc:src/scripts/const.ts) 中的消息类型定义：
+
+```typescript
+export enum Msg {
+  RequestSupport = "request-support",
+  ResponseSupport = "response-support",
+  // ... 其他消息类型
+}
+```
+
+### 接口定义
+为所有数据结构定义接口：
+
+```typescript
+interface NodeInfo {
+  id: string;
+  name: string;
+  type: string;
+  properties: Record<string, any>;
+}
+```
+
+## 代码组织
+
+### 模块化设计
+- 使用 ES6 模块语法 (`import`/`export`)
+- 每个文件只负责一个主要功能
+- 避免循环依赖
+- 使用命名空间组织相关功能
+
+### 文件命名
+- 使用 kebab-case 命名文件
+- 组件文件使用 PascalCase
+- 类型定义文件以 `.types.ts` 结尾
+- 工具文件以 `.util.ts` 结尾
+
+## 异步处理
+
+### Promise 和 Async/Await
+- 优先使用 async/await 语法
+- 正确处理 Promise 错误
+- 使用 try-catch 包装异步操作
+- 避免 Promise 地狱
+
+### 错误处理
+```typescript
+async function handleMessage(msg: Message): Promise<void> {
+  try {
+    const result = await processMessage(msg);
+    return result;
+  } catch (error) {
+    console.error('Message processing failed:', error);
+    throw new Error(`Failed to process message: ${error.message}`);
+  }
+}
+```
+
+## 通信模式
+
+### 消息路由
+- 所有消息必须通过 Background Script 路由
+- 使用类型安全的消息传递
+- 实现消息验证和错误处理
+- 支持消息重试机制
+
+### 端口管理
+参考 [portMgr.ts](mdc:src/scripts/background/portMgr.ts) 的端口管理模式：
+
+```typescript
+class PortManager {
+  private ports: Map<string, Port> = new Map();
+  
+  addPort(id: string, port: Port): void {
+    this.ports.set(id, port);
+  }
+  
+  removePort(id: string): void {
+    this.ports.delete(id);
+  }
+}
+```
+
+## 性能优化
+
+### 内存管理
+- 及时清理事件监听器
+- 避免内存泄漏
+- 使用 WeakMap/WeakSet 存储对象引用
+- 实现对象池模式
+
+### 缓存策略
+```typescript
+class CacheManager<T> {
+  private cache = new Map<string, T>();
+  private maxSize: number;
+  
+  constructor(maxSize: number = 100) {
+    this.maxSize = maxSize;
+  }
+  
+  get(key: string): T | undefined {
+    return this.cache.get(key);
+  }
+  
+  set(key: string, value: T): void {
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    this.cache.set(key, value);
+  }
+}
+```
+
+## 调试支持
+
+### 日志系统
+```typescript
+enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3
+}
+
+class Logger {
+  private level: LogLevel = LogLevel.INFO;
+  
+  debug(message: string, ...args: any[]): void {
+    if (this.level <= LogLevel.DEBUG) {
+      console.debug(`[DEBUG] ${message}`, ...args);
+    }
+  }
+  
+  error(message: string, error?: Error): void {
+    if (this.level <= LogLevel.ERROR) {
+      console.error(`[ERROR] ${message}`, error);
+    }
+  }
+}
+```
+
+### 类型守卫
+```typescript
+function isNodeInfo(obj: any): obj is NodeInfo {
+  return obj && 
+         typeof obj.id === 'string' && 
+         typeof obj.name === 'string' &&
+         typeof obj.type === 'string';
+}
+```
+
+## 测试规范
+
+### 单元测试
+- 为所有公共函数编写测试
+- 使用 Jest 或 Vitest 测试框架
+- 测试覆盖率应达到 80% 以上
+- 模拟外部依赖
+
+### 集成测试
+- 测试组件间通信
+- 验证消息路由正确性
+- 测试错误处理机制
+- 验证性能指标
+
+## 代码质量
+
+### ESLint 配置
+- 使用严格的 ESLint 规则
+- 启用 TypeScript 相关规则
+- 配置 Prettier 格式化
+- 使用 husky 进行提交前检查
+
+### 注释规范
+```typescript
+/**
+ * 处理节点信息请求
+ * @param nodeId 节点ID
+ * @param callback 回调函数
+ * @returns Promise<NodeInfo>
+ */
+async function handleNodeInfoRequest(
+  nodeId: string, 
+  callback: (info: NodeInfo) => void
+): Promise<NodeInfo> {
+  // 实现逻辑
+}
+```
+
+## 安全考虑
+
+### 输入验证
+```typescript
+function validateMessage(msg: any): msg is Message {
+  return msg && 
+         typeof msg.type === 'string' &&
+         typeof msg.data === 'object';
+}
+```
+
+### 权限检查
+```typescript
+function checkPermission(operation: string, context: Context): boolean {
+  // 实现权限检查逻辑
+  return true;
+}
+```
+
+## 最佳实践
+
+1. **类型优先**: 始终定义明确的类型
+2. **错误处理**: 实现完整的错误处理机制
+3. **性能考虑**: 避免不必要的计算和内存分配
+4. **可维护性**: 编写清晰、可读的代码
+5. **测试驱动**: 先写测试，再写实现
+6. **文档完整**: 为所有公共 API 编写文档

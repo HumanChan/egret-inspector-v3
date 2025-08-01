@@ -7,7 +7,6 @@ export class PortDevtools extends PortMan {
     this.onDisconnect = () => {
       portMgr.removePort(this);
     };
-    
     this.onMessage = (data: PluginEvent) => {
       if (data.msg === Msg.RequestUseFrame) {
         // 因为devtool是定时器驱动，这里改变了content，后续就会将数据派发到对应的content中去
@@ -27,4 +26,4 @@ export class PortDevtools extends PortMan {
       }
     };
   }
-} 
+}

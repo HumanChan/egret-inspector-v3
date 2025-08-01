@@ -1,160 +1,59 @@
-/**
- * Chrome扩展后台脚本
- * 负责处理消息路由、连接状态管理和端口管理
- */
-
-import { debugLog, Msg, Page, PluginEvent, ResponseSupportData } from "../../core/types";
-import { portMgr } from "./portMgr";
+import { ChromeConst } from "cc-plugin/src/chrome/const";
+import { debugLog, Page, PluginEvent } from "../../core/types";
 import { Terminal } from "../terminal";
-
+import { PortMan } from "./portMan";
+import { portMgr } from "./portMgr";
 const terminal = new Terminal(Page.Background);
-
-/**
- * 监听扩展安装事件
- */
-chrome.runtime.onInstalled.addListener((details) => {
-  console.log("Egret Inspector Extension installed:", details.reason);
-  
-  if (details.reason === "install") {
-    console.log("First time installation - Egret Inspector");
-    // 可以在这里添加首次安装的初始化逻辑
+debugLog && console.log(...terminal.init());
+function isDevtools(port: chrome.runtime.Port) {
+  const devtoolsUrl = `chrome-extension://${port.sender?.id}/${ChromeConst.html.devtools}`;
+  if (port.sender?.url === devtoolsUrl) {
   }
-});
-
-/**
- * 监听来自content script的消息
- */
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("Background received message:", message);
-  
-  if (message.type === "hello") {
-    sendResponse({ 
-      response: "Hello from background script!",
-      timestamp: Date.now()
-    });
-  }
-  
-  if (message.type === "getStatus") {
-    const tabId = sender.tab?.id;
-    if (tabId) {
-      const status = {
-        engineDetected: false,
-        scriptsInjected: false,
-        lastUpdate: Date.now()
-      };
-      sendResponse(status);
-    } else {
-      sendResponse({ error: "No tab ID" });
-    }
-  }
-  
-  if (message.type === "updateStatus") {
-    const tabId = sender.tab?.id;
-    if (tabId && message.status) {
-      sendResponse({ success: true });
-    } else {
-      sendResponse({ error: "Invalid status update" });
-    }
-  }
-  
-  return true; // 保持消息通道开放
-});
-
-/**
- * 监听端口连接
- */
-chrome.runtime.onConnect.addListener((port) => {
-  console.log("Port connected:", port.name);
-  
-  // 获取标签页信息
-  const tab = port.sender?.tab;
-  if (!tab) {
-    console.error("No tab information available for port:", port.name);
+}
+function onTabConnect(tab: chrome.tabs.Tab, port: chrome.runtime.Port) {
+  if (tab.id === undefined || tab.id <= 0) {
+    debugger;
     return;
   }
-  
-  if (port.name === Page.Content) {
-    // 内容脚本端口
-    const portMan = portMgr.addPort(tab, port);
-    if (portMan) {
-      portMan.init();
-    }
-  } else if (port.name === Page.Devtools) {
-    // DevTools端口
-    const portMan = portMgr.addPort(tab, port);
-    if (portMan) {
-      portMan.init();
+  const portMan = portMgr.addPort(tab, port);
+  portMan.init();
+}
+chrome.runtime.onConnect.addListener((port: chrome.runtime.Port) => {
+  if (port.name === Page.Devtools) {
+    // devtool链接过来没有port.sender.tab
+    chrome.tabs.query({ active: true }, (tabs: chrome.tabs.Tab[]) => {
+      tabs.forEach((tab) => {
+        onTabConnect(tab, port);
+      });
+    });
+  } else {
+    const tab: chrome.tabs.Tab | undefined = port.sender?.tab;
+    if (tab) {
+      onTabConnect(tab, port);
     }
   }
 });
-
-/**
- * 监听扩展图标点击事件
- */
-chrome.action.onClicked.addListener((tab) => {
-  console.log("Extension icon clicked on tab:", tab.id);
-  
-  if (tab.id) {
-    console.log("Egret Inspector clicked on this tab");
+chrome.runtime.onMessage.addListener((request: PluginEvent, sender: any, sendResponse: any) => {
+  const event = PluginEvent.create(request);
+  const tabID = sender.tab.id;
+  const portMan: PortMan | undefined = portMgr.findPort(tabID);
+  if (portMan) {
+    if (event.check(Page.Content, Page.Background)) {
+      //  监听来自content.js发来的事件，将消息转发到devtools
+      event.reset(Page.Background, Page.Devtools);
+      console.log(`%c[Message]url:${sender.url}]\n${JSON.stringify(request)}`, "color:green");
+      portMgr.sendDevtoolMsg(request, tabID);
+    }
   }
 });
-
-/**
- * 监听标签页更新
- */
+chrome.tabs.onActivated.addListener(({ tabId, windowId }) => {});
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete') {
-    console.log("Tab updated:", tabId);
+  // 页面发生刷新，通知重新生成数据
+  if (changeInfo.status === "complete") {
+    const { id } = tab;
+    // -1为自己
+    if (id && id > -1) {
+      portMgr.useFrame(0, id);
+    }
   }
 });
-
-/**
- * 监听标签页关闭
- */
-chrome.tabs.onRemoved.addListener((tabId) => {
-  console.log("Tab closed:", tabId);
-});
-
-/**
- * 获取连接统计信息
- */
-function getConnectionStats(): {
-  contentPorts: number;
-  devtoolsPorts: number;
-  totalTabs: number;
-} {
-  return {
-    contentPorts: portMgr.portArray.filter(p => p.isContent()).length,
-    devtoolsPorts: portMgr.portArray.filter(p => p.isDevtools()).length,
-    totalTabs: portMgr.portArray.length
-  };
-}
-
-/**
- * 清理所有连接
- */
-function cleanupAllConnections(): void {
-  console.log("Cleaning up all connections...");
-  
-  // 断开所有端口
-  portMgr.portArray.forEach((port) => {
-    try {
-      if (port.port) {
-        port.port.disconnect();
-      }
-    } catch (error) {
-      console.error("Error disconnecting port:", error);
-    }
-  });
-  
-  // 清理端口数组
-  portMgr.portArray = [];
-  
-  console.log("All connections cleaned up");
-}
-
-// 导出供外部使用
-export {
-  getConnectionStats,
-  cleanupAllConnections
-}; 

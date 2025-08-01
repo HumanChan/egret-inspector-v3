@@ -53,6 +53,7 @@ class Bridge {
   
   send(msg: Msg, data?: any) {
     if (this.connect) {
+      console.log('send===>>>>>>>>>>>>>>>',msg, data);
       let sendData = new PluginEvent(Page.Devtools, Page.Background, msg, data);
       this.connect.postMessage(sendData);
     } else {

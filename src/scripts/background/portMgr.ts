@@ -1,4 +1,5 @@
 import { debugLog, Msg, Page, PluginEvent, ResponseUpdateFramesData, ResponseUseFrameData } from "../../core/types";
+import { FrameDetails } from "../../views/devtools/data";
 import { Terminal } from "../terminal";
 import { PortContent } from "./portContent";
 import { PortDevtools } from "./portDevtools";
@@ -21,13 +22,12 @@ export class PortMgr {
   public findPort(id: number): PortMan | null {
     return this.portArray.find((el) => el.tabID === id) || null;
   }
-  
   /**
    * 通知devtools更新
    */
   public updateFrames(tabID: number) {
     // 将content类型的port收集起来，同步到devtools
-    const data: any[] = [];
+    const data: FrameDetails[] = [];
     this.portArray.forEach((item) => {
       if (item.isContent() && item.tabID === tabID) {
         const frame = (item as PortContent).getFrameDetais();
@@ -62,7 +62,6 @@ export class PortMgr {
     }
     return null;
   }
-  
   public logState() {
     let arr: Array<{ name: string; id: number; url: string }> = [];
     let str: string[] = [];
@@ -83,7 +82,6 @@ export class PortMgr {
       debugLog && console.log(...this.terminal.log("no port connected"));
     }
   }
-  
   public removePort(item: PortMan) {
     let index = this.portArray.findIndex((el) => el === item);
     if (index > -1) {
@@ -103,19 +101,16 @@ export class PortMgr {
       console.log("not find devtools port");
     }
   }
-  
   getCurrentUsePort(tabID: number): PortMan | null {
     const portMan = this.portArray.find((portMan: PortMan) => {
       return portMan.isContent() && portMan.tabID === tabID && portMan.isUseing(this.tabUseFrameID[tabID]);
     });
     return portMan || null;
   }
-  
   useFrame(id: number, tabID: number) {
     this.tabUseFrameID[tabID] = id;
     const event = new PluginEvent(Page.Background, Page.Devtools, Msg.ResponseUpdateFrames, { id } as ResponseUseFrameData);
     this.sendDevtoolMsg(event, tabID);
   }
 }
-
-export const portMgr = new PortMgr(); 
+export const portMgr = new PortMgr();

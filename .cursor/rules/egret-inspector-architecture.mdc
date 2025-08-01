@@ -1,0 +1,274 @@
+---
+alwaysApply: true
+---
+# Egret Inspector 架构指南
+
+## 项目概述
+
+Egret Inspector 是一个基于 Chrome 扩展的 Egret 引擎调试工具，采用 CC-Inspector 的成熟架构设计。项目使用 TypeScript + Vue.js 技术栈，通过 CC-Plugin 构建。
+
+## 核心架构组件
+
+### 1. DevTools Panel (用户界面层)
+- **位置**: [src/views/devtools/](mdc:src/views/devtools/)
+- **功能**: 提供调试工具的用户界面
+- **技术栈**: Vue.js + TypeScript
+- **通信**: 通过 Bridge 与 Background Script 通信
+
+### 2. Background Script (中央路由层)
+- **位置**: [src/scripts/background/](mdc:src/scripts/background/)
+- **功能**: 中央消息路由，管理所有连接
+- **核心组件**:
+  - [portMgr.ts](mdc:src/scripts/background/portMgr.ts): 端口管理器
+  - [portMan.ts](mdc:src/scripts/background/portMan.ts): 端口基类
+  - [portContent.ts](mdc:src/scripts/background/portContent.ts): 内容脚本端口
+  - [portDevtools.ts](mdc:src/scripts/background/portDevtools.ts): DevTools 端口
+
+### 3. Content Script (内容脚本层)
+- **位置**: [src/scripts/content/](mdc:src/scripts/content/)
+- **功能**: 页面内容脚本，注入调试脚本
+- **通信**: 通过 DOM 事件与 Inject Script 通信
+
+### 4. Inject Script (注入脚本层)
+- **位置**: [src/scripts/inject/](mdc:src/scripts/inject/)
+- **功能**: 注入到页面，与 Egret 引擎交互
+- **核心组件**:
+  - [inspector.ts](mdc:src/scripts/inject/inspector.ts): 主要检查器逻辑
+  - [event.ts](mdc:src/scripts/inject/event.ts): 事件处理基类
+  - [util.ts](mdc:src/scripts/inject/util.ts): 工具函数
+
+## 通信机制
+
+### 消息类型定义
+系统使用统一的消息类型系统，定义在 [const.ts](mdc:src/scripts/const.ts) 中：
+
+```typescript
+export enum Msg {
+  // 引擎支持检测
+  RequestSupport = "request-support",
+  ResponseSupport = "response-support",
+  
+  // 节点树信息
+  RequstTreeInfo = "request-tree-info",
+  ResponseTreeInfo = "response-tree-info",
+  
+  // 节点信息
+  RequestNodeInfo = "request-node-info",
+  ResponseNodeInfo = "response-node-info",
+  
+  // 属性操作
+  RequestSetProperty = "request-set-property",
+  ResponseSetProperty = "response-set-property",
+  
+  // 错误处理
+  ResponseError = "response-error",
+}
+```
+
+### 通信流程
+1. **正向通信** (DevTools → Inject): DevTools Panel → Background Script → Content Script → Inject Script
+2. **反向通信** (Inject → DevTools): Inject Script → Content Script → Background Script → DevTools Panel
+
+## 开发规范
+
+### 代码组织
+- 严格按照架构分层组织代码
+- 每个组件职责单一，避免跨层直接通信
+- 使用 TypeScript 严格模式
+- 遵循模块化设计原则
+
+### 消息处理
+- 所有消息必须通过 Background Script 路由
+- 消息格式必须符合预定义的类型
+- 实现完整的错误处理机制
+- 使用异步处理避免阻塞
+
+### 错误处理
+- 实现自动重连机制
+- 添加消息验证和类型检查
+- 记录详细的错误日志
+- 提供用户友好的错误提示
+
+### 性能优化
+- 实现节点引用缓存
+- 使用异步消息处理
+- 避免频繁的 DOM 操作
+- 实现批量处理机制
+
+## 配置文件
+
+### 项目配置
+- [package.json](mdc:package.json): 项目依赖和脚本
+- [cc-plugin.config.ts](mdc:cc-plugin.config.ts): CC-Plugin 构建配置
+- [tsconfig.json](mdc:tsconfig.json): TypeScript 配置
+
+### 国际化
+- [src/i18n/en.ts](mdc:src/i18n/en.ts): 英文语言包
+- [src/i18n/zh.ts](mdc:src/i18n/zh.ts): 中文语言包
+
+## 开发命令
+
+```bash
+# 安装依赖
+npm install
+
+# 开发模式
+npm run dev
+
+# 构建项目
+npm run build
+
+# 强制安装依赖
+npm run installForce
+```
+
+## 安全考虑
+
+- 实现消息标识验证
+- 添加源和目标验证
+- 实现权限控制机制
+- 确保数据验证和类型检查
+
+## 扩展性设计
+
+- 采用模块化架构
+- 支持可插拔的功能组件
+- 提供统一的消息接口
+- 支持多引擎扩展
+
+## 调试支持# Egret Inspector 架构指南
+
+## 项目概述
+
+Egret Inspector 是一个基于 Chrome 扩展的 Egret 引擎调试工具，采用 CC-Inspector 的成熟架构设计。项目使用 TypeScript + Vue.js 技术栈，通过 CC-Plugin 构建。
+
+## 核心架构组件
+
+### 1. DevTools Panel (用户界面层)
+- **位置**: [src/views/devtools/](mdc:src/views/devtools/)
+- **功能**: 提供调试工具的用户界面
+- **技术栈**: Vue.js + TypeScript
+- **通信**: 通过 Bridge 与 Background Script 通信
+
+### 2. Background Script (中央路由层)
+- **位置**: [src/scripts/background/](mdc:src/scripts/background/)
+- **功能**: 中央消息路由，管理所有连接
+- **核心组件**:
+  - [portMgr.ts](mdc:src/scripts/background/portMgr.ts): 端口管理器
+  - [portMan.ts](mdc:src/scripts/background/portMan.ts): 端口基类
+  - [portContent.ts](mdc:src/scripts/background/portContent.ts): 内容脚本端口
+  - [portDevtools.ts](mdc:src/scripts/background/portDevtools.ts): DevTools 端口
+
+### 3. Content Script (内容脚本层)
+- **位置**: [src/scripts/content/](mdc:src/scripts/content/)
+- **功能**: 页面内容脚本，注入调试脚本
+- **通信**: 通过 DOM 事件与 Inject Script 通信
+
+### 4. Inject Script (注入脚本层)
+- **位置**: [src/scripts/inject/](mdc:src/scripts/inject/)
+- **功能**: 注入到页面，与 Egret 引擎交互
+- **核心组件**:
+  - [inspector.ts](mdc:src/scripts/inject/inspector.ts): 主要检查器逻辑
+  - [event.ts](mdc:src/scripts/inject/event.ts): 事件处理基类
+  - [util.ts](mdc:src/scripts/inject/util.ts): 工具函数
+
+## 通信机制
+
+### 消息类型定义
+系统使用统一的消息类型系统，定义在 [const.ts](mdc:src/scripts/const.ts) 中：
+
+```typescript
+export enum Msg {
+  // 引擎支持检测
+  RequestSupport = "request-support",
+  ResponseSupport = "response-support",
+  
+  // 节点树信息
+  RequstTreeInfo = "request-tree-info",
+  ResponseTreeInfo = "response-tree-info",
+  
+  // 节点信息
+  RequestNodeInfo = "request-node-info",
+  ResponseNodeInfo = "response-node-info",
+  
+  // 属性操作
+  RequestSetProperty = "request-set-property",
+  ResponseSetProperty = "response-set-property",
+  
+  // 错误处理
+  ResponseError = "response-error",
+}
+```
+
+### 通信流程
+1. **正向通信** (DevTools → Inject): DevTools Panel → Background Script → Content Script → Inject Script
+2. **反向通信** (Inject → DevTools): Inject Script → Content Script → Background Script → DevTools Panel
+
+## 开发规范
+
+### 代码组织
+- 严格按照架构分层组织代码
+- 每个组件职责单一，避免跨层直接通信
+- 使用 TypeScript 严格模式
+- 遵循模块化设计原则
+
+### 消息处理
+- 所有消息必须通过 Background Script 路由
+- 消息格式必须符合预定义的类型
+- 实现完整的错误处理机制
+- 使用异步处理避免阻塞
+
+### 错误处理
+- 实现自动重连机制
+- 添加消息验证和类型检查
+- 记录详细的错误日志
+- 提供用户友好的错误提示
+
+### 性能优化
+- 实现节点引用缓存
+- 使用异步消息处理
+- 避免频繁的 DOM 操作
+- 实现批量处理机制
+
+## 配置文件
+
+### 项目配置
+- [package.json](mdc:package.json): 项目依赖和脚本
+- [cc-plugin.config.ts](mdc:cc-plugin.config.ts): CC-Plugin 构建配置
+- [tsconfig.json](mdc:tsconfig.json): TypeScript 配置
+
+### 国际化
+- [src/i18n/en.ts](mdc:src/i18n/en.ts): 英文语言包
+- [src/i18n/zh.ts](mdc:src/i18n/zh.ts): 中文语言包
+
+## 开发命令
+
+```bash
+# 安装依赖
+npm install
+
+# 开发模式
+npm run dev
+
+# 构建项目
+npm run build
+
+# 强制安装依赖
+npm run installForce
+```
+
+## 安全考虑
+
+- 实现消息标识验证
+- 添加源和目标验证
+- 实现权限控制机制
+- 确保数据验证和类型检查
+
+## 扩展性设计
+
+- 采用模块化架构
+- 支持可插拔的功能组件
+- 提供统一的消息接口
+- 支持多引擎扩展
+
+## 调试支持

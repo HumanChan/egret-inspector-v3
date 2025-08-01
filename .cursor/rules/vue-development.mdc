@@ -1,0 +1,444 @@
+---
+alwaysApply: true
+---
+
+# Vue.js 开发规范
+
+## 组件结构
+
+### 单文件组件 (SFC)
+Vue 组件应使用单文件组件格式：
+
+```vue
+<template>
+  <!-- 模板内容 -->
+</template>
+
+<script lang="ts">
+// TypeScript 脚本
+</script>
+
+<style scoped>
+/* 样式定义 */
+</style>
+```
+
+### 组件命名
+- 组件名使用 PascalCase
+- 文件名与组件名保持一致
+- 基础组件以 `Base` 开头
+
+## TypeScript 集成
+
+### 类型定义
+```vue
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+
+interface NodeInfo {
+  id: string
+  name: string
+  type: string
+  properties: Record<string, any>
+}
+
+export default defineComponent({
+  name: 'NodeTree',
+  props: {
+    nodes: {
+      type: Array as PropType<NodeInfo[]>,
+      required: true
+    }
+  },
+  emits: ['node-select'],
+  setup(props, { emit }) {
+    // 组合式 API 逻辑
+  }
+})
+</script>
+```
+
+### 响应式数据
+```vue
+<script lang="ts">
+import { ref, reactive, computed } from 'vue'
+
+export default defineComponent({
+  setup() {
+    const nodes = ref<NodeInfo[]>([])
+    const selectedNode = ref<NodeInfo | null>(null)
+    
+    const nodeCount = computed(() => nodes.value.length)
+    
+    return {
+      nodes,
+      selectedNode,
+      nodeCount
+    }
+  }
+})
+</script>
+```
+
+## 通信机制
+
+### Props 传递
+- 使用 TypeScript 定义 props 类型
+- 为可选 props 提供默认值
+- 使用 `required` 标记必需 props
+
+### 事件发射
+```vue
+<script lang="ts">
+export default defineComponent({
+  emits: {
+    'node-select': (node: NodeInfo) => {
+      return node && typeof node.id === 'string'
+    }
+  },
+  setup(props, { emit }) {
+    const handleNodeSelect = (node: NodeInfo) => {
+      emit('node-select', node)
+    }
+    
+    return { handleNodeSelect }
+  }
+})
+</script>
+```
+
+## 模板规范
+
+### 条件渲染
+```vue
+<template>
+  <div class="inspector-panel">
+    <div v-if="state.loading" class="loading">
+      加载中...
+    </div>
+    <div v-else-if="state.error" class="error">
+      {{ state.error }}
+    </div>
+    <div v-else class="content">
+      <!-- 主要内容 -->
+    </div>
+  </div>
+</template>
+```
+
+### 列表渲染
+```vue
+<template>
+  <div class="node-tree">
+    <div 
+      v-for="node in nodes" 
+      :key="node.id"
+      :class="{ 'selected': selectedNode?.id === node.id }"
+      @click="selectNode(node)"
+    >
+      <span class="node-name">{{ node.name }}</span>
+      <span class="node-type">{{ node.type }}</span>
+    </div>
+  </div>
+</template>
+```
+
+## 样式规范
+
+### Scoped 样式
+```vue
+<style scoped>
+.inspector-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.node-tree {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.node-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.node-item:hover {
+  background-color: #f5f5f5;
+}
+
+.node-item.selected {
+  background-color: #e3f2fd;
+  border-left: 3px solid #2196f3;
+}
+</style>
+```
+
+## 性能优化
+
+### 计算属性缓存
+```vue
+<script lang="ts">
+import { computed } from 'vue'
+
+export default defineComponent({
+  setup(props) {
+    const filteredNodes = computed(() => {
+      return props.nodes.filter(node => 
+        node.name.toLowerCase().includes(props.searchText.toLowerCase())
+      )
+    })
+    
+    return { filteredNodes }
+  }
+})
+</script>
+```
+
+## 错误处理
+
+### 错误边界
+```vue
+<script lang="ts">
+import { onErrorCaptured } from 'vue'
+
+export default defineComponent({
+  setup() {
+    onErrorCaptured((error, instance, info) => {
+      console.error('Component error:', error)
+      return false
+    })
+  }
+})
+</script>
+```
+
+## 最佳实践
+
+1. **组件设计**: 保持组件职责单一，可复用
+2. **类型安全**: 使用 TypeScript 定义所有类型
+3. **性能优化**: 使用计算属性
+4. **错误处理**: 实现完整的错误边界
+5. **代码规范**: 遵循 Vue 官方风格指南
+# Vue.js 开发规范
+
+## 组件结构
+
+### 单文件组件 (SFC)
+Vue 组件应使用单文件组件格式：
+
+```vue
+<template>
+  <!-- 模板内容 -->
+</template>
+
+<script lang="ts">
+// TypeScript 脚本
+</script>
+
+<style scoped>
+/* 样式定义 */
+</style>
+```
+
+### 组件命名
+- 组件名使用 PascalCase
+- 文件名与组件名保持一致
+- 基础组件以 `Base` 开头
+
+## TypeScript 集成
+
+### 类型定义
+```vue
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'
+
+interface NodeInfo {
+  id: string
+  name: string
+  type: string
+  properties: Record<string, any>
+}
+
+export default defineComponent({
+  name: 'NodeTree',
+  props: {
+    nodes: {
+      type: Array as PropType<NodeInfo[]>,
+      required: true
+    }
+  },
+  emits: ['node-select'],
+  setup(props, { emit }) {
+    // 组合式 API 逻辑
+  }
+})
+</script>
+```
+
+### 响应式数据
+```vue
+<script lang="ts">
+import { ref, reactive, computed } from 'vue'
+
+export default defineComponent({
+  setup() {
+    const nodes = ref<NodeInfo[]>([])
+    const selectedNode = ref<NodeInfo | null>(null)
+    
+    const nodeCount = computed(() => nodes.value.length)
+    
+    return {
+      nodes,
+      selectedNode,
+      nodeCount
+    }
+  }
+})
+</script>
+```
+
+## 通信机制
+
+### Props 传递
+- 使用 TypeScript 定义 props 类型
+- 为可选 props 提供默认值
+- 使用 `required` 标记必需 props
+
+### 事件发射
+```vue
+<script lang="ts">
+export default defineComponent({
+  emits: {
+    'node-select': (node: NodeInfo) => {
+      return node && typeof node.id === 'string'
+    }
+  },
+  setup(props, { emit }) {
+    const handleNodeSelect = (node: NodeInfo) => {
+      emit('node-select', node)
+    }
+    
+    return { handleNodeSelect }
+  }
+})
+</script>
+```
+
+## 模板规范
+
+### 条件渲染
+```vue
+<template>
+  <div class="inspector-panel">
+    <div v-if="state.loading" class="loading">
+      加载中...
+    </div>
+    <div v-else-if="state.error" class="error">
+      {{ state.error }}
+    </div>
+    <div v-else class="content">
+      <!-- 主要内容 -->
+    </div>
+  </div>
+</template>
+```
+
+### 列表渲染
+```vue
+<template>
+  <div class="node-tree">
+    <div 
+      v-for="node in nodes" 
+      :key="node.id"
+      :class="{ 'selected': selectedNode?.id === node.id }"
+      @click="selectNode(node)"
+    >
+      <span class="node-name">{{ node.name }}</span>
+      <span class="node-type">{{ node.type }}</span>
+    </div>
+  </div>
+</template>
+```
+
+## 样式规范
+
+### Scoped 样式
+```vue
+<style scoped>
+.inspector-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.node-tree {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.node-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.node-item:hover {
+  background-color: #f5f5f5;
+}
+
+.node-item.selected {
+  background-color: #e3f2fd;
+  border-left: 3px solid #2196f3;
+}
+</style>
+```
+
+## 性能优化
+
+### 计算属性缓存
+```vue
+<script lang="ts">
+import { computed } from 'vue'
+
+export default defineComponent({
+  setup(props) {
+    const filteredNodes = computed(() => {
+      return props.nodes.filter(node => 
+        node.name.toLowerCase().includes(props.searchText.toLowerCase())
+      )
+    })
+    
+    return { filteredNodes }
+  }
+})
+</script>
+```
+
+## 错误处理
+
+### 错误边界
+```vue
+<script lang="ts">
+import { onErrorCaptured } from 'vue'
+
+export default defineComponent({
+  setup() {
+    onErrorCaptured((error, instance, info) => {
+      console.error('Component error:', error)
+      return false
+    })
+  }
+})
+</script>
+```
+
+## 最佳实践
+
+1. **组件设计**: 保持组件职责单一，可复用
+2. **类型安全**: 使用 TypeScript 定义所有类型
+3. **性能优化**: 使用计算属性
+4. **错误处理**: 实现完整的错误边界
+5. **代码规范**: 遵循 Vue 官方风格指南
