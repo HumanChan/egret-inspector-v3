@@ -234,4 +234,4 @@ export function MsgInclude(msg: Msg) {
   return inEnum(Msg, msg);
 }
 
-export const debugLog: boolean = false; 
+export const debugLog: boolean = true; 

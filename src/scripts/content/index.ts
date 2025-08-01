@@ -33,6 +33,8 @@ document.addEventListener(DocumentEvent.Inject2Content, (event: CustomEvent) => 
     data.reset(Page.Content, Page.Devtools);
     if (connect) {
       // 接受来自inject.js的消息数据,然后中转到background.js
+
+      console.log("data", data);
       connect.postMessage(data);
     } else {
       debugLog && console.log(...terminal.log(`connect is null`));
