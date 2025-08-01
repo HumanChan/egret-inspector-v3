@@ -37,6 +37,30 @@
         </div>
       </div>
       
+      <!-- 添加Hierarchy组件 -->
+      <div class="section" v-if="treeData && treeData.nodes">
+        <h2>Node Hierarchy</h2>
+        <div class="hierarchy-container">
+          <Hierarchy 
+            :treeData="convertedTreeData" 
+            @node-select="handleNodeSelect"
+            @node-unselect="handleNodeUnselect"
+          />
+        </div>
+      </div>
+      
+      <!-- 添加Hierarchy组件 -->
+      <div class="section" v-if="treeData && treeData.nodes">
+        <h2>Node Hierarchy</h2>
+        <div class="hierarchy-container">
+          <Hierarchy 
+            :treeData="convertedTreeData" 
+            @node-select="handleNodeSelect"
+            @node-unselect="handleNodeUnselect"
+          />
+        </div>
+      </div>
+      
       <div class="section" v-if="treeData">
         <h2>Tree Data</h2>
         <div class="tree-info">
@@ -56,12 +80,17 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
+import { defineComponent, ref, onMounted, onUnmounted, computed } from 'vue';
 import { bridge } from './bridge';
 import { Msg } from '../../core/types';
+import { TreeData } from './data';
+import Hierarchy from './hierarchy.vue';
 
 export default defineComponent({
   name: 'EgretInspectorPanel',
+  components: {
+    Hierarchy
+  },
   setup() {
     const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('connecting');
     const connectionStatusText = ref('Connecting...');
@@ -71,6 +100,16 @@ export default defineComponent({
     const engineType = ref('unknown');
     const treeData = ref(null);
     const errorMessage = ref('');
+    const selectedNode = ref<TreeData | null>(null);
+
+    // 转换树数据为cc-ui需要的格式
+    const convertedTreeData = computed(() => {
+      if (!treeData.value || !treeData.value.nodes) {
+        return [];
+      }
+      
+      return treeData.value.nodes.map(node => TreeData.fromNodeInfo(node));
+    });
 
     const updateConnectionStatus = (status: 'connected' | 'disconnected' | 'connecting') => {
       connectionStatus.value = status;
@@ -120,6 +159,16 @@ export default defineComponent({
       errorMessage.value = data.data || 'Unknown error occurred';
     };
 
+    const handleNodeSelect = (node: TreeData) => {
+      console.log('Node selected:', node);
+      selectedNode.value = node;
+    };
+
+    const handleNodeUnselect = () => {
+      console.log('Node unselected');
+      selectedNode.value = null;
+    };
+
     onMounted(() => {
       console.log('Egret Inspector Panel mounted');
       
@@ -149,9 +198,13 @@ export default defineComponent({
       engineVersion,
       engineType,
       treeData,
+      convertedTreeData,
       errorMessage,
+      selectedNode,
       requestSupport,
-      requestTreeInfo
+      requestTreeInfo,
+      handleNodeSelect,
+      handleNodeUnselect
     };
   }
 });
@@ -251,6 +304,20 @@ export default defineComponent({
 .actions button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.hierarchy-container {
+  height: 400px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hierarchy-container {
+  height: 400px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .tree-info p {

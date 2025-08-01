@@ -213,4 +213,40 @@ export interface BuildArrayOptions {
   path: string[];
   data: any;
   keys: string[];
+}
+
+// 适配cc-ui的树形数据结构
+export class TreeData {
+  id: string = "";
+  active: boolean = true;
+  text: string = "";
+  children: TreeData[] = [];
+
+  constructor(id: string = "", text: string = "") {
+    this.id = id;
+    this.text = text;
+  }
+
+  // 从NodeInfoData转换为TreeData
+  static fromNodeInfo(nodeInfo: NodeInfoData): TreeData {
+    const treeData = new TreeData(nodeInfo.uuid, nodeInfo.name);
+    treeData.active = true;
+
+    // 递归转换子节点
+    if (nodeInfo.children && nodeInfo.children.length > 0) {
+      treeData.children = nodeInfo.children.map(child => TreeData.fromNodeInfo(child));
+    }
+
+    return treeData;
+  }
+
+  // 从TreeData数组转换为cc-ui需要的格式
+  static fromTreeDataArray(treeDataArray: TreeData[]): TreeData[] {
+    return treeDataArray.map(item => {
+      const treeData = new TreeData(item.id, item.text);
+      treeData.active = item.active;
+      treeData.children = TreeData.fromTreeDataArray(item.children);
+      return treeData;
+    });
+  }
 } 
