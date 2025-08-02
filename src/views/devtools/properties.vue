@@ -40,6 +40,21 @@
       </div>
       
       <div v-else class="property-groups">
+        <!-- Internal Properties -->
+        <div v-if="internalProperties.length > 0" class="property-group internal-group">
+          <div class="group-header">
+            <span class="group-title">Internal</span>
+          </div>
+          <div class="group-content">
+            <PropertyItem 
+              v-for="prop in internalProperties" 
+              :key="prop.name"
+              :property="prop"
+              @update="updateProperty"
+            />
+          </div>
+        </div>
+        
         <!-- Transform Properties -->
         <div v-if="transformProperties.length > 0" class="property-group">
           <div class="group-header">
@@ -204,6 +219,7 @@ export default defineComponent({
       if (!searchKeyword.value.trim()) return true;
       
       const allProperties = [
+        ...internalProperties.value,
         ...transformProperties.value,
         ...displayProperties.value,
         ...layoutProperties.value,
@@ -217,10 +233,17 @@ export default defineComponent({
     });
     
     // 属性分类（应用搜索过滤）
+    const internalProperties = computed(() => {
+      const baseProps = props.properties.filter(prop => 
+        prop.name.startsWith('$')
+      );
+      const result = filterProperties(baseProps, searchKeyword.value);
+      return result;
+    });
+
     const transformProperties = computed(() => {
       const baseProps = props.properties.filter(prop => 
-        ['$x', '$y', '$scaleX', '$scaleY', '$rotation', '$skewX', '$skewY', '$anchorOffsetX', '$anchorOffsetY', 
-         'x', 'y', 'scaleX', 'scaleY', 'rotation', 'anchorOffsetX', 'anchorOffsetY'].includes(prop.name)
+        ['x', 'y', 'scaleX', 'scaleY', 'rotation', 'anchorOffsetX', 'anchorOffsetY'].includes(prop.name)
       );
       const result = filterProperties(baseProps, searchKeyword.value);
       return result;
@@ -228,7 +251,7 @@ export default defineComponent({
 
     const displayProperties = computed(() => {
       const baseProps = props.properties.filter(prop => 
-        ['$alpha', '$visible', '$blendMode', '$tintRGB', '_tint', 'alpha', 'visible', 'blendMode', 'color', 'text'].includes(prop.name)
+        ['alpha', 'visible', 'blendMode', 'color', 'text', '_tint'].includes(prop.name)
       );
       const result = filterProperties(baseProps, searchKeyword.value);
       return result;
@@ -236,7 +259,7 @@ export default defineComponent({
 
     const layoutProperties = computed(() => {
       const baseProps = props.properties.filter(prop => 
-        ['$mask', '$scrollRect', '$cacheAsBitmap', '$cacheDirty', 'mask', 'scrollRect', 'cacheAsBitmap'].includes(prop.name)
+        ['mask', 'scrollRect', 'cacheAsBitmap'].includes(prop.name)
       );
       const result = filterProperties(baseProps, searchKeyword.value);
       return result;
@@ -244,7 +267,7 @@ export default defineComponent({
 
     const interactionProperties = computed(() => {
       const baseProps = props.properties.filter(prop => 
-        ['$touchEnabled', '$inputEnabled', 'touchEnabled', 'inputEnabled'].includes(prop.name)
+        ['touchEnabled', 'inputEnabled'].includes(prop.name)
       );
       const result = filterProperties(baseProps, searchKeyword.value);
       return result;
@@ -252,7 +275,7 @@ export default defineComponent({
 
     const containerProperties = computed(() => {
       const baseProps = props.properties.filter(prop => 
-        ['$children', '$parent', '$stage', '$nestLevel', 'children', 'parent', 'stage'].includes(prop.name)
+        ['children', 'parent', 'stage'].includes(prop.name)
       );
       const result = filterProperties(baseProps, searchKeyword.value);
       return result;
@@ -260,19 +283,21 @@ export default defineComponent({
 
     const customProperties = computed(() => {
       const standardProps = [
+        // Internal properties (already filtered by internalProperties)
         // Transform properties
-        '$x', '$y', '$scaleX', '$scaleY', '$rotation', '$skewX', '$skewY', '$anchorOffsetX', '$anchorOffsetY',
         'x', 'y', 'scaleX', 'scaleY', 'rotation', 'anchorOffsetX', 'anchorOffsetY',
         // Display properties
-        '$alpha', '$visible', '$blendMode', '$tintRGB', '_tint', 'alpha', 'visible', 'blendMode', 'color', 'text',
+        'alpha', 'visible', 'blendMode', 'color', 'text', '_tint',
         // Layout properties
-        '$mask', '$scrollRect', '$cacheAsBitmap', '$cacheDirty', 'mask', 'scrollRect', 'cacheAsBitmap',
+        'mask', 'scrollRect', 'cacheAsBitmap',
         // Interaction properties
-        '$touchEnabled', '$inputEnabled', 'touchEnabled', 'inputEnabled',
+        'touchEnabled', 'inputEnabled',
         // Container properties
-        '$children', '$parent', '$stage', '$nestLevel', 'children', 'parent', 'stage'
+        'children', 'parent', 'stage'
       ];
-      const baseProps = props.properties.filter(prop => !standardProps.includes(prop.name));
+      const baseProps = props.properties.filter(prop => 
+        !prop.name.startsWith('$') && !standardProps.includes(prop.name)
+      );
       const result = filterProperties(baseProps, searchKeyword.value);
       return result;
     });
@@ -292,6 +317,7 @@ export default defineComponent({
       hasSearchResults,
       handleSearch,
       clearSearch,
+      internalProperties,
       transformProperties,
       displayProperties,
       layoutProperties,
@@ -437,5 +463,21 @@ export default defineComponent({
 
 .group-content {
   padding: 4px 0;
+}
+
+.internal-group {
+  border-top: 2px solid #4caf50;
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.internal-group .group-header {
+  background: #1e1e1e;
+  border-bottom: 1px solid #4caf50;
+}
+
+.internal-group .group-title {
+  color: #4caf50;
+  font-weight: 700;
 }
 </style> 
