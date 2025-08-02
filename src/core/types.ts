@@ -55,8 +55,18 @@ export interface RequestUseFrameData {
 export interface ResponseUseFrameData {
   id: number;
 }
-export type RequestSetPropertyData = any; // 暂时使用 any，后续根据 Egret 引擎数据结构定义
-export type ResponseSetPropertyData = any; // 暂时使用 any，后续根据 Egret 引擎数据结构定义
+export type RequestSetPropertyData = {
+  nodeId: string;
+  propertyPath: string[];
+  value: any;
+};
+export type ResponseSetPropertyData = {
+  success: boolean;
+  nodeId?: string;
+  propertyPath?: string[];
+  value?: any;
+  error?: string;
+};
 export type RequestLogData = string[];
 export type ResponseErrorData = string;
 

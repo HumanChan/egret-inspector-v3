@@ -43,8 +43,33 @@ export class Inspector extends InjectEvent {
       }
       case Msg.RequestSetProperty: {
         const data: RequestSetPropertyData = pluginEvent.data;
-        // 暂时不实现属性设置功能
-        console.warn("Property setting not implemented yet");
+        console.log('RequestSetProperty received:', data);
+        
+        if (data.nodeId && data.propertyPath && data.value !== undefined) {
+          const success = this.setNodeProperty(data.nodeId, data.propertyPath, data.value);
+          
+          // 发送响应
+          const responseData = {
+            success: success,
+            nodeId: data.nodeId,
+            propertyPath: data.propertyPath,
+            value: data.value
+          };
+          
+          this.sendMsgToContent(Msg.ResponseSetProperty, responseData);
+          
+          if (success) {
+            console.log('Property set successfully:', data.propertyPath.join('.'), '=', data.value);
+          } else {
+            console.warn('Failed to set property:', data.propertyPath.join('.'), '=', data.value);
+          }
+        } else {
+          console.warn('Invalid RequestSetProperty data:', data);
+          this.sendMsgToContent(Msg.ResponseSetProperty, {
+            success: false,
+            error: 'Invalid data'
+          });
+        }
         break;
       }
       case Msg.RequestLogData: {
@@ -233,12 +258,18 @@ export class Inspector extends InjectEvent {
    */
   setNodeProperty(nodeId: string, propertyPath: string[], value: any): boolean {
     try {
+      console.log('setNodeProperty called:', nodeId, propertyPath, value);
+      
       // 从存储中获取节点对象
       const node = this.inspectorGameMemoryStorage[nodeId];
       if (!node) {
         console.warn('Node not found:', nodeId);
         return false;
       }
+
+      console.log('Found node:', node);
+      console.log('Node type:', typeof node);
+      console.log('Node constructor:', node.constructor?.name);
 
       // 验证属性值
       if (!this.validatePropertyValue(propertyPath[0], value)) {
@@ -257,12 +288,32 @@ export class Inspector extends InjectEvent {
       }
 
       const propertyName = propertyPath[propertyPath.length - 1];
-      currentObj[propertyName] = value;
+      
+      // 特殊处理 Egret 引擎的属性
+      if (propertyName === 'visible') {
+        console.log('Setting visible property:', value);
+        // 确保设置的是布尔值
+        const boolValue = Boolean(value);
+        currentObj[propertyName] = boolValue;
+        
+        // 对于 Egret 引擎，可能还需要设置 $visible
+        if (currentObj.$visible !== undefined) {
+          currentObj.$visible = boolValue;
+          console.log('Also set $visible:', boolValue);
+        }
+        
+        console.log('Visible property set successfully');
+      } else {
+        currentObj[propertyName] = value;
+      }
 
       console.log('Property updated:', propertyPath.join('.'), '=', value);
+      console.log('New property value:', currentObj[propertyName]);
+      
       return true;
     } catch (error) {
       console.error('Error setting property:', error);
+      console.error('Error stack:', error.stack);
       return false;
     }
   }

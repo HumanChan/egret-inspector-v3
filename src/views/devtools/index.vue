@@ -162,6 +162,19 @@ export default defineComponent({
       errorMessage.value = data.data || 'Unknown error occurred';
     };
 
+    const handleSetPropertyResponse = (data: any) => {
+      console.log('Set property response:', data);
+      if (data.data) {
+        if (data.data.success) {
+          console.log('Property updated successfully');
+          // 可以在这里添加成功提示或刷新属性列表
+        } else {
+          console.warn('Property update failed:', data.data.error);
+          errorMessage.value = data.data.error || 'Property update failed';
+        }
+      }
+    };
+
     const handleNodeSelect = (node: TreeData) => {
       console.log('Node selected:', node);
       selectedNode.value = node;
@@ -182,13 +195,25 @@ export default defineComponent({
     };
 
     const handlePropertyUpdate = (property: Property, newValue: any) => {
+      console.log('=== PROPERTY UPDATE START ===');
       console.log('Property update:', property.name, '=', newValue);
-      // TODO: 实现属性更新逻辑
-      // bridge.send(Msg.RequestSetProperty, {
-      //   nodeId: selectedNode.value?.id,
-      //   propertyPath: property.path,
-      //   value: newValue
-      // });
+      console.log('Property type:', property.type);
+      console.log('Property path:', property.path);
+      console.log('Selected node:', selectedNode.value);
+      
+      if (selectedNode.value && selectedNode.value.id) {
+        console.log('Sending property update request');
+        const requestData = {
+          nodeId: selectedNode.value.id,
+          propertyPath: property.path,
+          value: newValue
+        };
+        console.log('Request data:', requestData);
+        bridge.send(Msg.RequestSetProperty, requestData);
+      } else {
+        console.warn('No selected node for property update');
+      }
+      console.log('=== PROPERTY UPDATE END ===');
     };
 
     onMounted(() => {
@@ -199,6 +224,7 @@ export default defineComponent({
       bridge.on(Msg.ResponseTreeInfo, handleTreeInfoResponse);
       bridge.on(Msg.ResponseNodeInfo, handleNodeInfoResponse);
       bridge.on(Msg.ResponseError, handleErrorResponse);
+      bridge.on(Msg.ResponseSetProperty, handleSetPropertyResponse);
       
       // 更新连接状态
       updateConnectionStatus('connected');
