@@ -110,6 +110,33 @@ export default defineComponent({
   flex-direction: column;
   height: 100%;
   min-width: 200px;
-  width: 300px;
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+/* 自定义滚动条样式 */
+.hierarchy-panel::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.hierarchy-panel::-webkit-scrollbar-track {
+  background: #2d2d30;
+}
+
+.hierarchy-panel::-webkit-scrollbar-thumb {
+  background: #3e3e42;
+  border-radius: 4px;
+}
+
+.hierarchy-panel::-webkit-scrollbar-thumb:hover {
+  background: #4e4e52;
+}
+
+/* Firefox 滚动条样式 */
+.hierarchy-panel {
+  scrollbar-width: thin;
+  scrollbar-color: #3e3e42 #2d2d30;
 }
 </style> 

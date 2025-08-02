@@ -343,8 +343,10 @@ export class Inspector extends InjectEvent {
     
     try {
       const uuid = this.generateUUID();
+      const nodeHashCode = this.getObjectHashCode(node);
+      
       const nodeInfo = {
-        id: this.getObjectHashCode(node),
+        id: nodeHashCode,
         name: node.name || this.getDisplayName(node),
         type: this.getDisplayName(node),
         uuid: uuid,

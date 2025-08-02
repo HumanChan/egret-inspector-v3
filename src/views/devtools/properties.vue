@@ -6,6 +6,24 @@
         <span class="node-name">{{ selectedNode.name }}</span>
         <span class="node-type">{{ selectedNode.type }}</span>
       </div>
+      
+      <!-- 搜索输入框 -->
+      <div class="search-container">
+        <input 
+          v-model="searchKeyword"
+          @input="handleSearch"
+          placeholder="Search properties..."
+          class="search-input"
+        />
+        <button 
+          v-if="searchKeyword"
+          @click="clearSearch"
+          class="clear-button"
+          title="Clear search"
+        >
+          ×
+        </button>
+      </div>
     </div>
     
     <div class="properties-content">
@@ -15,6 +33,10 @@
       
       <div v-else-if="properties.length === 0" class="no-properties">
         No properties available
+      </div>
+      
+      <div v-else-if="searchKeyword && !hasSearchResults" class="no-results">
+        No properties match "{{ searchKeyword }}"
       </div>
       
       <div v-else class="property-groups">
@@ -113,7 +135,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, PropType } from 'vue';
+import { defineComponent, computed, ref, PropType } from 'vue';
 import { Property } from './data';
 import PropertyItem from './property-item.vue';
 
@@ -134,50 +156,89 @@ export default defineComponent({
   },
   emits: ['property-update'],
   setup(props, { emit }) {
+    // 搜索状态
+    const searchKeyword = ref('');
+    
     // 调试信息
     console.log('Properties component props:', props);
     console.log('selectedNode:', props.selectedNode);
     console.log('properties:', props.properties);
     
-    // 属性分类
+    // 搜索处理函数
+    const handleSearch = () => {
+      // 搜索逻辑在computed属性中处理
+      console.log('Search keyword:', searchKeyword.value);
+    };
+    
+    // 清空搜索
+    const clearSearch = () => {
+      searchKeyword.value = '';
+    };
+    
+    // 属性过滤函数
+    const filterProperties = (properties: Property[], keyword: string) => {
+      if (!keyword.trim()) return properties;
+      const lowerKeyword = keyword.toLowerCase();
+      return properties.filter(prop => 
+        prop.name.toLowerCase().includes(lowerKeyword)
+      );
+    };
+    
+    // 检查是否有搜索结果
+    const hasSearchResults = computed(() => {
+      if (!searchKeyword.value.trim()) return true;
+      
+      const allProperties = [
+        ...transformProperties.value,
+        ...displayProperties.value,
+        ...layoutProperties.value,
+        ...interactionProperties.value,
+        ...containerProperties.value,
+        ...customProperties.value
+      ];
+      
+      return allProperties.length > 0;
+    });
+    
+    // 属性分类（应用搜索过滤）
     const transformProperties = computed(() => {
-      const result = props.properties.filter(prop => 
+      const baseProps = props.properties.filter(prop => 
         ['$x', '$y', '$scaleX', '$scaleY', '$rotation', '$skewX', '$skewY', '$anchorOffsetX', '$anchorOffsetY', 
          'x', 'y', 'scaleX', 'scaleY', 'rotation', 'anchorOffsetX', 'anchorOffsetY'].includes(prop.name)
       );
-      console.log('Transform properties:', result);
+      const result = filterProperties(baseProps, searchKeyword.value);
       return result;
     });
 
     const displayProperties = computed(() => {
-      const result = props.properties.filter(prop => 
+      const baseProps = props.properties.filter(prop => 
         ['$alpha', '$visible', '$blendMode', '$tintRGB', '_tint', 'alpha', 'visible', 'blendMode', 'color', 'text'].includes(prop.name)
       );
-      console.log('Display properties:', result);
+      const result = filterProperties(baseProps, searchKeyword.value);
       return result;
     });
 
     const layoutProperties = computed(() => {
-      const result = props.properties.filter(prop => 
+      const baseProps = props.properties.filter(prop => 
         ['$mask', '$scrollRect', '$cacheAsBitmap', '$cacheDirty', 'mask', 'scrollRect', 'cacheAsBitmap'].includes(prop.name)
       );
-      console.log('Layout properties:', result);
+      const result = filterProperties(baseProps, searchKeyword.value);
       return result;
     });
 
     const interactionProperties = computed(() => {
-      const result = props.properties.filter(prop => 
+      const baseProps = props.properties.filter(prop => 
         ['$touchEnabled', '$inputEnabled', 'touchEnabled', 'inputEnabled'].includes(prop.name)
       );
-      console.log('Interaction properties:', result);
+      const result = filterProperties(baseProps, searchKeyword.value);
       return result;
     });
 
     const containerProperties = computed(() => {
-      const result = props.properties.filter(prop => 
+      const baseProps = props.properties.filter(prop => 
         ['$children', '$parent', '$stage', '$nestLevel', 'children', 'parent', 'stage'].includes(prop.name)
       );
-      console.log('Container properties:', result);
+      const result = filterProperties(baseProps, searchKeyword.value);
       return result;
     });
 
@@ -195,8 +256,8 @@ export default defineComponent({
         // Container properties
         '$children', '$parent', '$stage', '$nestLevel', 'children', 'parent', 'stage'
       ];
-      const result = props.properties.filter(prop => !standardProps.includes(prop.name));
-      console.log('Custom properties:', result);
+      const baseProps = props.properties.filter(prop => !standardProps.includes(prop.name));
+      const result = filterProperties(baseProps, searchKeyword.value);
       return result;
     });
 
@@ -205,6 +266,10 @@ export default defineComponent({
     };
 
     return {
+      searchKeyword,
+      hasSearchResults,
+      handleSearch,
+      clearSearch,
       transformProperties,
       displayProperties,
       layoutProperties,
@@ -244,6 +309,7 @@ export default defineComponent({
   display: flex;
   gap: 12px;
   font-size: 12px;
+  margin-bottom: 12px;
 }
 
 .node-name {
@@ -255,6 +321,54 @@ export default defineComponent({
   color: #888;
 }
 
+/* 搜索容器样式 */
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid #3e3e42;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #cccccc;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #007acc;
+}
+
+.search-input::placeholder {
+  color: #888;
+}
+
+.clear-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  transition: color 0.2s;
+}
+
+.clear-button:hover {
+  color: #cccccc;
+  background: #3e3e42;
+}
+
 .properties-content {
   flex: 1;
   overflow-y: auto;
@@ -264,7 +378,8 @@ export default defineComponent({
 }
 
 .no-selection,
-.no-properties {
+.no-properties,
+.no-results {
   padding: 20px;
   text-align: center;
   color: #888;
