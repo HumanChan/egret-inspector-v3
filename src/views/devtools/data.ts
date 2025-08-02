@@ -176,12 +176,6 @@ export interface NodeInfoData {
   timestamp: number;
 }
 
-// 树数据
-export interface TreeData {
-  nodes: NodeInfoData[];
-  timestamp: number;
-}
-
 // 帧详情数据
 export interface FrameDetails {
   tabID: number;
@@ -248,5 +242,25 @@ export class TreeData {
       treeData.children = TreeData.fromTreeDataArray(item.children);
       return treeData;
     });
+  }
+
+  // 从扁平数组构建树形结构
+  static buildTreeFromFlatArray(nodes: NodeInfoData[]): TreeData[] {
+    const nodeMap = new Map<string, NodeInfoData>();
+    const rootNodes: NodeInfoData[] = [];
+
+    // 创建节点映射
+    nodes.forEach(node => {
+      nodeMap.set(node.uuid, node);
+    });
+
+    // 构建树形结构
+    nodes.forEach(node => {
+      // 这里假设根节点没有父节点，或者通过其他方式识别
+      // 暂时将所有节点作为根节点处理
+      rootNodes.push(node);
+    });
+
+    return rootNodes.map(node => TreeData.fromNodeInfo(node));
   }
 } 

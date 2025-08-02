@@ -228,16 +228,15 @@ export class Inspector extends InjectEvent {
    * 将树节点转换为数组格式
    */
   private treeNodeToArray(rootNode: any): any[] {
-    const nodes: any[] = [];
-    this.processNode(rootNode, nodes, 0);
-    return nodes;
+    const rootNodeInfo = this.processNode(rootNode, 0);
+    return rootNodeInfo ? [rootNodeInfo] : [];
   }
 
   /**
-   * 处理单个节点
+   * 处理单个节点，返回树形结构
    */
-  private processNode(node: any, nodes: any[], depth: number): void {
-    if (!node) return;
+  private processNode(node: any, depth: number): any {
+    if (!node) return null;
     
     try {
       const nodeInfo = {
@@ -252,32 +251,38 @@ export class Inspector extends InjectEvent {
         depth: depth
       };
       
-      nodes.push(nodeInfo);
-      
       // 处理子节点
       if (depth < 3) { // 限制深度避免性能问题
-        this.processChildren(node, nodes, depth + 1);
+        nodeInfo.children = this.processChildren(node, depth + 1);
       }
+      
+      return nodeInfo;
       
     } catch (error) {
       console.warn('Error processing node:', error);
+      return null;
     }
   }
 
   /**
-   * 处理子节点
+   * 处理子节点，返回子节点数组
    */
-  private processChildren(obj: any, nodes: any[], depth: number): void {
+  private processChildren(obj: any, depth: number): any[] {
+    const children: any[] = [];
+    
     try {
       // 检查 Egret 显示对象的子节点
       if (obj.numChildren !== undefined && typeof obj.numChildren === 'number') {
-        const numChildren = obj.numChildren;
+        const numChildren = Math.min(obj.numChildren, 100);
         
-        for (let i = 0; i < numChildren && i < 100; i++) { // 限制子节点数量
+        for (let i = 0; i < numChildren; i++) {
           try {
             const child = obj.getChildAt(i);
             if (child) {
-              this.processNode(child, nodes, depth);
+              const childNode = this.processNode(child, depth);
+              if (childNode) {
+                children.push(childNode);
+              }
             }
           } catch (error) {
             console.warn(`Error getting child at index ${i}:`, error);
@@ -289,7 +294,10 @@ export class Inspector extends InjectEvent {
         for (let i = 0; i < obj.children.length && i < 100; i++) {
           const child = obj.children[i];
           if (child) {
-            this.processNode(child, nodes, depth);
+            const childNode = this.processNode(child, depth);
+            if (childNode) {
+              children.push(childNode);
+            }
           }
         }
       }
@@ -297,6 +305,8 @@ export class Inspector extends InjectEvent {
     } catch (error) {
       console.warn('Error processing children:', error);
     }
+    
+    return children;
   }
 
   /**

@@ -29,7 +29,8 @@ export default defineComponent({
   props: {
     treeData: {
       type: Array as () => TreeData[],
-      default: () => []
+      default: () => [],
+      required: true
     }
   },
   emits: ['node-select', 'node-unselect'],
@@ -59,6 +60,7 @@ export default defineComponent({
 
     // 节点点击事件
     const handleNodeClick = (data: TreeData | null) => {
+      console.log('Node clicked:', data);
       if (data) {
         selectedUUID = data.id;
         emit('node-select', data);

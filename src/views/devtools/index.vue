@@ -1,7 +1,12 @@
 <template>
   <div id="egret-inspector-panel">
     <div class="header">
-      <h1>Egret Inspector</h1>
+      <div class="header-left">
+        <div class="title-row">
+          <h1>Egret Inspector</h1>
+          <span class="engine-version" v-if="engineDetected">Egret Version: {{ engineVersion }}</span>
+        </div>
+      </div>
       <div class="status">
         <span :class="['status-indicator', connectionStatus]">
           {{ connectionStatusText }}
@@ -10,64 +15,20 @@
     </div>
     
     <div class="content">
-      <div class="section">
-        <h2>Engine Detection</h2>
-        <div class="engine-info">
-          <p v-if="engineDetected">
-            <strong>Egret Engine Detected</strong><br>
-            Version: {{ engineVersion }}<br>
-            Type: {{ engineType }}
-          </p>
-          <p v-else>
-            <strong>No Egret Engine Detected</strong><br>
-            Please refresh the page or check if the game is loaded.
-          </p>
-        </div>
-      </div>
+
       
-      <div class="section">
-        <h2>Actions</h2>
-        <div class="actions">
-          <button @click="requestSupport" :disabled="!isConnected">
-            Check Support
-          </button>
-          <button @click="requestTreeInfo" :disabled="!isConnected">
-            Get Tree Info
-          </button>
-        </div>
-      </div>
+
       
       <!-- 添加Hierarchy组件 -->
-      <div class="section" v-if="treeData && treeData.nodes">
-        <h2>Node Hierarchy</h2>
-        <div class="hierarchy-container">
-          <Hierarchy 
-            :treeData="convertedTreeData" 
-            @node-select="handleNodeSelect"
-            @node-unselect="handleNodeUnselect"
-          />
-        </div>
+      <div class="hierarchy-section" v-if="treeData && treeData.nodes">
+        <Hierarchy 
+          :treeData="convertedTreeData" 
+          @node-select="handleNodeSelect"
+          @node-unselect="handleNodeUnselect"
+        />
       </div>
       
-      <!-- 添加Hierarchy组件 -->
-      <div class="section" v-if="treeData && treeData.nodes">
-        <h2>Node Hierarchy</h2>
-        <div class="hierarchy-container">
-          <Hierarchy 
-            :treeData="convertedTreeData" 
-            @node-select="handleNodeSelect"
-            @node-unselect="handleNodeUnselect"
-          />
-        </div>
-      </div>
-      
-      <div class="section" v-if="treeData">
-        <h2>Tree Data</h2>
-        <div class="tree-info">
-          <p>Nodes: {{ treeData.nodes?.length || 0 }}</p>
-          <p>Timestamp: {{ new Date(treeData.timestamp).toLocaleString() }}</p>
-        </div>
-      </div>
+
       
       <div class="section" v-if="errorMessage">
         <h2>Error</h2>
@@ -108,7 +69,13 @@ export default defineComponent({
         return [];
       }
       
-      return treeData.value.nodes.map(node => TreeData.fromNodeInfo(node));
+      // 如果已经是树形结构，直接转换
+      if (treeData.value.nodes.length === 1 && treeData.value.nodes[0].children) {
+        return [TreeData.fromNodeInfo(treeData.value.nodes[0])];
+      }
+      
+      // 否则使用扁平数组构建树形结构
+      return TreeData.buildTreeFromFlatArray(treeData.value.nodes);
     });
 
     const updateConnectionStatus = (status: 'connected' | 'disconnected' | 'connecting') => {
@@ -143,6 +110,11 @@ export default defineComponent({
         if (data.data.support) {
           engineVersion.value = data.data.version || 'unknown';
           engineType.value = data.data.engineType || 'egret';
+          
+          // 引擎检测成功后自动获取节点树
+          setTimeout(() => {
+            requestTreeInfo();
+          }, 500);
         }
       }
     };
@@ -180,32 +152,30 @@ export default defineComponent({
       // 更新连接状态
       updateConnectionStatus('connected');
       
-      // 自动请求支持状态
+      // 自动请求引擎检测
       setTimeout(() => {
         requestSupport();
-      }, 1000);
+      }, 500);
     });
 
     onUnmounted(() => {
       console.log('Egret Inspector Panel unmounted');
     });
 
-    return {
-      connectionStatus,
-      connectionStatusText,
-      isConnected,
-      engineDetected,
-      engineVersion,
-      engineType,
-      treeData,
-      convertedTreeData,
-      errorMessage,
-      selectedNode,
-      requestSupport,
-      requestTreeInfo,
-      handleNodeSelect,
-      handleNodeUnselect
-    };
+          return {
+        connectionStatus,
+        connectionStatusText,
+        isConnected,
+        engineDetected,
+        engineVersion,
+        engineType,
+        treeData,
+        convertedTreeData,
+        errorMessage,
+        selectedNode,
+        handleNodeSelect,
+        handleNodeUnselect
+      };
   }
 });
 </script>
@@ -214,23 +184,42 @@ export default defineComponent({
 #egret-inspector-panel {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   padding: 16px;
-  background: #f5f5f5;
+  background: #2d2d30;
   min-height: 100vh;
+  color: #cccccc;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title-row {
+  display: flex;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #ddd;
+  gap: 16px;
 }
 
 .header h1 {
   margin: 0;
   font-size: 18px;
-  color: #333;
+  color: #cccccc;
+}
+
+.engine-version {
+  padding: 2px 6px;
+  background: #3e3e42;
+  border-radius: 3px;
+  color: #cccccc;
 }
 
 .status-indicator {
@@ -242,95 +231,59 @@ export default defineComponent({
 
 .status-indicator.connected {
   background: #4caf50;
-  color: white;
+  color: #ffffff;
 }
 
 .status-indicator.disconnected {
   background: #f44336;
-  color: white;
+  color: #ffffff;
 }
 
 .status-indicator.connecting {
   background: #ff9800;
-  color: white;
+  color: #ffffff;
 }
 
 .content {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  height: calc(100vh - 80px);
 }
 
 .section {
-  background: white;
+  background: #252526;
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  border: 1px solid #3e3e42;
 }
 
 .section h2 {
   margin: 0 0 12px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #cccccc;
 }
 
-.engine-info p {
-  margin: 8px 0;
-  font-size: 13px;
-  color: #666;
-}
 
-.actions {
-  display: flex;
-  gap: 8px;
-}
 
-.actions button {
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
-  color: #333;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
 
-.actions button:hover:not(:disabled) {
-  background: #f0f0f0;
-}
 
-.actions button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.hierarchy-container {
-  height: 400px;
-  border: 1px solid #ddd;
+.hierarchy-section {
+  flex: 1;
+  border: 1px solid #3e3e42;
   border-radius: 4px;
   overflow: hidden;
+  background: #252526;
 }
 
-.hierarchy-container {
-  height: 400px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  overflow: hidden;
-}
 
-.tree-info p {
-  margin: 4px 0;
-  font-size: 12px;
-  color: #666;
-}
 
 .error {
   color: #f44336;
   font-size: 12px;
   padding: 8px;
-  background: #ffebee;
+  background: #2d1b1b;
   border-radius: 4px;
   border-left: 4px solid #f44336;
 }
