@@ -1,13 +1,15 @@
 <template>
   <div class="boolean-editor">
-    <label class="checkbox-label">
+    <label class="toggle-label">
       <input
         type="checkbox"
         :checked="value"
         @change="handleChange"
-        class="checkbox-input"
+        class="toggle-input"
       />
-      <span class="checkbox-custom"></span>
+      <span class="toggle-slider">
+        <span class="toggle-thumb"></span>
+      </span>
     </label>
   </div>
 </template>
@@ -45,16 +47,19 @@ export default defineComponent({
 <style scoped>
 .boolean-editor {
   width: 100%;
+  display: flex;
+  align-items: center;
 }
 
-.checkbox-label {
+.toggle-label {
   display: flex;
   align-items: center;
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
 
-.checkbox-input {
+.toggle-input {
   position: absolute;
   opacity: 0;
   cursor: pointer;
@@ -62,39 +67,52 @@ export default defineComponent({
   width: 0;
 }
 
-.checkbox-custom {
-  height: 16px;
-  width: 16px;
-  background-color: #1e1e1e;
-  border: 1px solid #3e3e42;
-  border-radius: 3px;
+.toggle-slider {
   position: relative;
-  transition: all 0.2s;
+  width: 36px;
+  height: 20px;
+  background-color: #3e3e42;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  border: 1px solid #555;
 }
 
-.checkbox-custom:after {
-  content: "";
+.toggle-thumb {
   position: absolute;
-  display: none;
-  left: 5px;
   top: 2px;
-  width: 4px;
-  height: 8px;
-  border: solid #4caf50;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: #888;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.checkbox-input:checked ~ .checkbox-custom {
+.toggle-input:checked ~ .toggle-slider {
   background-color: #4caf50;
   border-color: #4caf50;
 }
 
-.checkbox-input:checked ~ .checkbox-custom:after {
-  display: block;
+.toggle-input:checked ~ .toggle-slider .toggle-thumb {
+  transform: translateX(16px);
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.checkbox-input:focus ~ .checkbox-custom {
+.toggle-input:focus ~ .toggle-slider {
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+}
+
+.toggle-input:hover ~ .toggle-slider {
   border-color: #4caf50;
+}
+
+.toggle-input:hover ~ .toggle-slider .toggle-thumb {
+  background-color: #aaa;
+}
+
+.toggle-input:checked:hover ~ .toggle-slider .toggle-thumb {
+  background-color: #f0f0f0;
 }
 </style> 
