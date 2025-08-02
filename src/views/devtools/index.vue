@@ -19,13 +19,24 @@
       
 
       
-      <!-- 添加Hierarchy组件 -->
-      <div class="hierarchy-section" v-if="treeData && treeData.nodes">
-        <Hierarchy 
-          :treeData="convertedTreeData" 
-          @node-select="handleNodeSelect"
-          @node-unselect="handleNodeUnselect"
-        />
+      <div class="main-content" v-if="treeData && treeData.nodes">
+        <!-- Hierarchy Section -->
+        <div class="hierarchy-section">
+          <Hierarchy 
+            :treeData="convertedTreeData" 
+            @node-select="handleNodeSelect"
+            @node-unselect="handleNodeUnselect"
+          />
+        </div>
+        
+        <!-- Properties Section -->
+        <div class="properties-section">
+          <Properties 
+            :selectedNode="selectedNode"
+            :properties="nodeProperties"
+            @property-update="handlePropertyUpdate"
+          />
+        </div>
       </div>
       
 
@@ -44,13 +55,15 @@
 import { defineComponent, ref, onMounted, onUnmounted, computed } from 'vue';
 import { bridge } from './bridge';
 import { Msg } from '../../core/types';
-import { TreeData } from './data';
+import { TreeData, Property } from './data';
 import Hierarchy from './hierarchy.vue';
+import Properties from './properties.vue';
 
 export default defineComponent({
   name: 'EgretInspectorPanel',
   components: {
-    Hierarchy
+    Hierarchy,
+    Properties
   },
   setup() {
     const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('connecting');
@@ -62,6 +75,7 @@ export default defineComponent({
     const treeData = ref(null);
     const errorMessage = ref('');
     const selectedNode = ref<TreeData | null>(null);
+    const nodeProperties = ref<Property[]>([]);
 
     // 转换树数据为cc-ui需要的格式
     const convertedTreeData = computed(() => {
@@ -69,13 +83,19 @@ export default defineComponent({
         return [];
       }
       
+      console.log('Converting tree data:', treeData.value);
+      
       // 如果已经是树形结构，直接转换
       if (treeData.value.nodes.length === 1 && treeData.value.nodes[0].children) {
-        return [TreeData.fromNodeInfo(treeData.value.nodes[0])];
+        const result = [TreeData.fromNodeInfo(treeData.value.nodes[0])];
+        console.log('Converted tree data (single root):', result);
+        return result;
       }
       
       // 否则使用扁平数组构建树形结构
-      return TreeData.buildTreeFromFlatArray(treeData.value.nodes);
+      const result = TreeData.buildTreeFromFlatArray(treeData.value.nodes);
+      console.log('Converted tree data (flat array):', result);
+      return result;
     });
 
     const updateConnectionStatus = (status: 'connected' | 'disconnected' | 'connecting') => {
@@ -126,6 +146,17 @@ export default defineComponent({
       }
     };
 
+    const handleNodeInfoResponse = (data: any) => {
+      console.log('Node info response:', data);
+      if (data.data && data.data.properties) {
+        console.log('Setting node properties:', data.data.properties);
+        nodeProperties.value = data.data.properties;
+      } else {
+        console.log('No properties found in response');
+        nodeProperties.value = [];
+      }
+    };
+
     const handleErrorResponse = (data: any) => {
       console.error('Error response:', data);
       errorMessage.value = data.data || 'Unknown error occurred';
@@ -134,11 +165,30 @@ export default defineComponent({
     const handleNodeSelect = (node: TreeData) => {
       console.log('Node selected:', node);
       selectedNode.value = node;
+      
+      // 获取节点属性
+      if (node && node.id) {
+        console.log('Requesting node info for:', node.id);
+        bridge.send(Msg.RequestNodeInfo, { uuid: node.id });
+      } else {
+        console.warn('Node has no id:', node);
+      }
     };
 
     const handleNodeUnselect = () => {
       console.log('Node unselected');
       selectedNode.value = null;
+      nodeProperties.value = [];
+    };
+
+    const handlePropertyUpdate = (property: Property, newValue: any) => {
+      console.log('Property update:', property.name, '=', newValue);
+      // TODO: 实现属性更新逻辑
+      // bridge.send(Msg.RequestSetProperty, {
+      //   nodeId: selectedNode.value?.id,
+      //   propertyPath: property.path,
+      //   value: newValue
+      // });
     };
 
     onMounted(() => {
@@ -147,6 +197,7 @@ export default defineComponent({
       // 监听消息
       bridge.on(Msg.ResponseSupport, handleSupportResponse);
       bridge.on(Msg.ResponseTreeInfo, handleTreeInfoResponse);
+      bridge.on(Msg.ResponseNodeInfo, handleNodeInfoResponse);
       bridge.on(Msg.ResponseError, handleErrorResponse);
       
       // 更新连接状态
@@ -173,8 +224,10 @@ export default defineComponent({
         convertedTreeData,
         errorMessage,
         selectedNode,
+        nodeProperties,
         handleNodeSelect,
-        handleNodeUnselect
+        handleNodeUnselect,
+        handlePropertyUpdate
       };
   }
 });
@@ -269,12 +322,32 @@ export default defineComponent({
 
 
 
+.main-content {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+
 .hierarchy-section {
   flex: 1;
   border: 1px solid #3e3e42;
   border-radius: 4px;
   overflow: hidden;
   background: #252526;
+  min-height: 0;
+}
+
+.properties-section {
+  flex: 1;
+  border: 1px solid #3e3e42;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #252526;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 

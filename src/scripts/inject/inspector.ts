@@ -162,13 +162,45 @@ export class Inspector extends InjectEvent {
   }
 
   getNodeInfo(uuid: string) {
-    // 暂时返回空的节点信息，后续实现具体的节点信息获取
-    const nodeInfo = {
-      uuid: uuid,
-      properties: [],
-      timestamp: Date.now()
-    };
-    this.sendMsgToContent(Msg.ResponseNodeInfo, nodeInfo as ResponseNodeInfoData);
+    try {
+      console.log('getNodeInfo called for uuid:', uuid);
+      console.log('inspectorGameMemoryStorage keys:', Object.keys(this.inspectorGameMemoryStorage));
+      
+      // 从存储中查找节点对象
+      const node = this.inspectorGameMemoryStorage[uuid];
+      if (!node) {
+        console.warn('Node not found:', uuid);
+        const nodeInfo = {
+          uuid: uuid,
+          properties: [],
+          timestamp: Date.now()
+        };
+        this.sendMsgToContent(Msg.ResponseNodeInfo, nodeInfo as ResponseNodeInfoData);
+        return;
+      }
+
+      console.log('Found node:', node);
+
+      // 获取节点属性
+      const properties = this.getNodeProperties(node);
+      
+      const nodeInfo = {
+        uuid: uuid,
+        properties: properties,
+        timestamp: Date.now()
+      };
+      
+      console.log('Node info for', uuid, ':', nodeInfo);
+      this.sendMsgToContent(Msg.ResponseNodeInfo, nodeInfo as ResponseNodeInfoData);
+    } catch (error) {
+      console.error('Error getting node info:', error);
+      const nodeInfo = {
+        uuid: uuid,
+        properties: [],
+        timestamp: Date.now()
+      };
+      this.sendMsgToContent(Msg.ResponseNodeInfo, nodeInfo as ResponseNodeInfoData);
+    }
   }
 
   getValue(obj: any, path: string[]): any {
@@ -193,6 +225,77 @@ export class Inspector extends InjectEvent {
       return true;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * 设置节点属性
+   */
+  setNodeProperty(nodeId: string, propertyPath: string[], value: any): boolean {
+    try {
+      // 从存储中获取节点对象
+      const node = this.inspectorGameMemoryStorage[nodeId];
+      if (!node) {
+        console.warn('Node not found:', nodeId);
+        return false;
+      }
+
+      // 验证属性值
+      if (!this.validatePropertyValue(propertyPath[0], value)) {
+        console.warn('Invalid property value:', propertyPath[0], value);
+        return false;
+      }
+
+      // 设置属性值
+      let currentObj = node;
+      for (let i = 0; i < propertyPath.length - 1; i++) {
+        currentObj = currentObj[propertyPath[i]];
+        if (!currentObj) {
+          console.warn('Property path not found:', propertyPath);
+          return false;
+        }
+      }
+
+      const propertyName = propertyPath[propertyPath.length - 1];
+      currentObj[propertyName] = value;
+
+      console.log('Property updated:', propertyPath.join('.'), '=', value);
+      return true;
+    } catch (error) {
+      console.error('Error setting property:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 验证属性值
+   */
+  private validatePropertyValue(propertyName: string, value: any): boolean {
+    switch (propertyName) {
+      case 'x':
+      case 'y':
+        return typeof value === 'number';
+      case 'width':
+      case 'height':
+        return typeof value === 'number' && value >= 0;
+      case 'scaleX':
+      case 'scaleY':
+        return typeof value === 'number';
+      case 'rotation':
+        return typeof value === 'number';
+      case 'alpha':
+        return typeof value === 'number' && value >= 0 && value <= 1;
+      case 'visible':
+        return typeof value === 'boolean';
+      case 'touchEnabled':
+      case 'touchChildren':
+      case 'mouseEnabled':
+      case 'mouseChildren':
+        return typeof value === 'boolean';
+      case 'name':
+        return typeof value === 'string';
+      default:
+        return true; // 其他属性不做严格验证
     }
   }
 
@@ -239,17 +342,22 @@ export class Inspector extends InjectEvent {
     if (!node) return null;
     
     try {
+      const uuid = this.generateUUID();
       const nodeInfo = {
         id: this.getObjectHashCode(node),
         name: node.name || this.getDisplayName(node),
         type: this.getDisplayName(node),
-        uuid: this.generateUUID(),
+        uuid: uuid,
         children: [],
         properties: this.getNodeProperties(node),
         expandable: this.hasChildren(node),
         visible: this.isVisible(node),
         depth: depth
       };
+      
+      // 存储节点对象到内存中，以便后续获取属性
+      this.inspectorGameMemoryStorage[uuid] = node;
+      console.log('Stored node in memory:', uuid, node);
       
       // 处理子节点
       if (depth < 3) { // 限制深度避免性能问题
@@ -343,15 +451,32 @@ export class Inspector extends InjectEvent {
     const visited = new WeakSet();
     
     if (!obj || typeof obj !== 'object') {
+      console.log('getNodeProperties: obj is not an object', obj);
       return properties;
     }
 
     try {
-      const keys = Object.getOwnPropertyNames(obj);
+      // 获取对象自身的属性
+      const ownKeys = Object.getOwnPropertyNames(obj);
+      console.log('getNodeProperties: own keys:', ownKeys);
       
-      for (const key of keys) {
-        // 跳过私有属性和内部属性
-        if (key.startsWith('_') || key.startsWith('$')) {
+      // 获取原型链上的属性
+      let prototype = Object.getPrototypeOf(obj);
+      const prototypeKeys: string[] = [];
+      while (prototype && prototype !== Object.prototype) {
+        const protoKeys = Object.getOwnPropertyNames(prototype);
+        prototypeKeys.push(...protoKeys);
+        prototype = Object.getPrototypeOf(prototype);
+      }
+      console.log('getNodeProperties: prototype keys:', prototypeKeys);
+      
+      // 合并所有属性，去重
+      const allKeys = [...new Set([...ownKeys, ...prototypeKeys])];
+      console.log('getNodeProperties: all keys:', allKeys);
+      
+      for (const key of allKeys) {
+        // 跳过私有属性（但不跳过Egret的内部属性）
+        if (key.startsWith('_') && !key.startsWith('$')) {
           continue;
         }
         
@@ -391,18 +516,46 @@ export class Inspector extends InjectEvent {
           value: safeValue,
           type: type,
           expandable: expandable,
-          readonly: readonly
+          readonly: readonly,
+          path: [key]
         });
       }
       
-      // 按名称排序
-      properties.sort((a, b) => a.name.localeCompare(b.name));
+      // 按属性分类排序
+      properties.sort((a, b) => {
+        const orderA = this.getPropertyOrder(a.name);
+        const orderB = this.getPropertyOrder(b.name);
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        return a.name.localeCompare(b.name);
+      });
+      
+      console.log('getNodeProperties: returning properties:', properties);
       
     } catch (error) {
       console.warn('Error getting node properties:', error);
     }
     
     return properties;
+  }
+
+  /**
+   * 获取属性显示顺序
+   */
+  private getPropertyOrder(propertyName: string): number {
+    const transformProps = ['$x', '$y', '$scaleX', '$scaleY', '$rotation', '$skewX', '$skewY', '$anchorOffsetX', '$anchorOffsetY', 'x', 'y', 'scaleX', 'scaleY', 'rotation'];
+    const displayProps = ['$alpha', '$visible', '$blendMode', '$tintRGB', '_tint', 'alpha', 'visible', 'blendMode'];
+    const layoutProps = ['$mask', '$scrollRect', '$cacheAsBitmap', '$cacheDirty', 'mask', 'scrollRect', 'cacheAsBitmap'];
+    const interactionProps = ['$touchEnabled', '$inputEnabled', 'touchEnabled', 'inputEnabled'];
+    const containerProps = ['$children', '$parent', '$stage', '$nestLevel', 'children', 'parent', 'stage'];
+    
+    if (transformProps.includes(propertyName)) return 1;
+    if (displayProps.includes(propertyName)) return 2;
+    if (layoutProps.includes(propertyName)) return 3;
+    if (interactionProps.includes(propertyName)) return 4;
+    if (containerProps.includes(propertyName)) return 5;
+    return 6; // 自定义属性
   }
 
   /**
