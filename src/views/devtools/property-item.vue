@@ -55,6 +55,8 @@ export default defineComponent({
           return 'ObjectEditor';
         case DataType.Array:
           return 'ArrayEditor';
+        case DataType.Function:
+          return 'div'; // 函数类型显示为只读文本
         default:
           return 'StringEditor';
       }

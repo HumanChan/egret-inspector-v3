@@ -482,11 +482,6 @@ export class Inspector extends InjectEvent {
           continue;
         }
         
-        // 跳过函数
-        if (typeof obj[key] === 'function') {
-          continue;
-        }
-        
         // 跳过事件相关属性（通常包含循环引用）
         if (key.includes('Event') || key.includes('Dispatcher')) {
           continue;
@@ -501,9 +496,14 @@ export class Inspector extends InjectEvent {
         
         // 检查循环引用
         if (value && typeof value === 'object' && visited.has(value)) {
-          value = '[Circular Reference]';
+          continue; // 直接跳过循环引用的属性
         } else if (value && typeof value === 'object') {
           visited.add(value);
+        }
+        
+        // 跳过对象类型（但保留数组和函数）
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          continue;
         }
         
         const type = this.getPropertyType(value);
@@ -569,6 +569,7 @@ export class Inspector extends InjectEvent {
     if (typeof value === 'string') return 'string';
     if (typeof value === 'number') return 'number';
     if (typeof value === 'boolean') return 'boolean';
+    if (typeof value === 'function') return 'function';
     if (Array.isArray(value)) return 'array';
     if (typeof value === 'object') return 'object';
     return typeof value;
@@ -579,6 +580,7 @@ export class Inspector extends InjectEvent {
    */
   private isExpandable(value: any): boolean {
     if (value === null || value === undefined) return false;
+    if (typeof value === 'function') return false;
     if (typeof value === 'object') return true;
     if (Array.isArray(value)) return value.length > 0;
     return false;
@@ -680,7 +682,11 @@ export class Inspector extends InjectEvent {
     if (typeof value === 'string') return value;
     if (typeof value === 'number') return value;
     if (typeof value === 'boolean') return value;
-    if (typeof value === 'function') return '[Function]';
+    if (typeof value === 'function') {
+      // 尝试获取函数名称
+      const funcName = value.name || 'anonymous';
+      return `[Function: ${funcName}]`;
+    }
     
     if (Array.isArray(value)) {
       return value.slice(0, 10).map(item => this.safeSerialize(item, depth + 1));

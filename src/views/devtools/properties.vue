@@ -129,6 +129,21 @@
             />
           </div>
         </div>
+        
+        <!-- Function Properties -->
+        <div v-if="functionProperties.length > 0" class="property-group">
+          <div class="group-header">
+            <span class="group-title">Functions</span>
+          </div>
+          <div class="group-content">
+            <PropertyItem 
+              v-for="prop in functionProperties" 
+              :key="prop.name"
+              :property="prop"
+              @update="updateProperty"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -194,7 +209,8 @@ export default defineComponent({
         ...layoutProperties.value,
         ...interactionProperties.value,
         ...containerProperties.value,
-        ...customProperties.value
+        ...customProperties.value,
+        ...functionProperties.value
       ];
       
       return allProperties.length > 0;
@@ -261,6 +277,12 @@ export default defineComponent({
       return result;
     });
 
+    const functionProperties = computed(() => {
+      const baseProps = props.properties.filter(prop => prop.type === 'function');
+      const result = filterProperties(baseProps, searchKeyword.value);
+      return result;
+    });
+
     const updateProperty = (property: Property, newValue: any) => {
       emit('property-update', property, newValue);
     };
@@ -276,6 +298,7 @@ export default defineComponent({
       interactionProperties,
       containerProperties,
       customProperties,
+      functionProperties,
       updateProperty
     };
   }
