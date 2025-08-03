@@ -167,7 +167,11 @@ export default defineComponent({
       if (data.data) {
         if (data.data.success) {
           console.log('Property updated successfully');
-          // 可以在这里添加成功提示或刷新属性列表
+          // 属性更新成功后，刷新属性列表
+          if (selectedNode.value && selectedNode.value.id) {
+            console.log('Refreshing node properties after update');
+            bridge.send(Msg.RequestNodeInfo, { uuid: selectedNode.value.id });
+          }
         } else {
           console.warn('Property update failed:', data.data.error);
           errorMessage.value = data.data.error || 'Property update failed';

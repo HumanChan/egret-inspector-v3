@@ -21,6 +21,7 @@ import BooleanEditor from './editors/boolean-editor.vue';
 import StringEditor from './editors/string-editor.vue';
 import ObjectEditor from './editors/object-editor.vue';
 import ArrayEditor from './editors/array-editor.vue';
+import ColorEditor from './editors/color-editor.vue';
 
 export default defineComponent({
   name: 'PropertyItem',
@@ -29,7 +30,8 @@ export default defineComponent({
     BooleanEditor,
     StringEditor,
     ObjectEditor,
-    ArrayEditor
+    ArrayEditor,
+    ColorEditor
   },
   props: {
     property: {
@@ -57,6 +59,8 @@ export default defineComponent({
           return 'ArrayEditor';
         case DataType.Function:
           return 'div'; // 函数类型显示为只读文本
+        case DataType.Color:
+          return 'ColorEditor';
         default:
           return 'StringEditor';
       }

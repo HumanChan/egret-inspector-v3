@@ -303,6 +303,24 @@ export class Inspector extends InjectEvent {
         }
         
         console.log('Visible property set successfully');
+      } else if (propertyName.toLowerCase().includes('color') || propertyName === 'tintRGB') {
+        console.log('Setting color property:', propertyName, '=', value);
+        // 确保颜色值是有效的数字
+        const colorValue = parseInt(value);
+        if (!isNaN(colorValue)) {
+          currentObj[propertyName] = colorValue;
+          
+          // 对于 Egret 引擎，可能还需要设置相关的颜色属性
+          if (propertyName === 'tintRGB' && currentObj._tint !== undefined) {
+            currentObj._tint = colorValue;
+            console.log('Also set _tint:', colorValue);
+          }
+          
+          console.log('Color property set successfully');
+        } else {
+          console.warn('Invalid color value:', value);
+          return false;
+        }
       } else {
         currentObj[propertyName] = value;
       }
@@ -346,6 +364,10 @@ export class Inspector extends InjectEvent {
       case 'name':
         return typeof value === 'string';
       default:
+        // 检查是否为颜色属性
+        if (propertyName.toLowerCase().includes('color') || propertyName === 'tintRGB') {
+          return typeof value === 'number' && value >= 0 && value <= 0xFFFFFF;
+        }
         return true; // 其他属性不做严格验证
     }
   }
@@ -557,7 +579,7 @@ export class Inspector extends InjectEvent {
           continue;
         }
         
-        const type = this.getPropertyType(value);
+        const type = this.getPropertyType(value, key);
         const expandable = this.isExpandable(value);
         const readonly = this.isReadonly(obj, key);
         
@@ -614,11 +636,17 @@ export class Inspector extends InjectEvent {
   /**
    * 获取属性类型
    */
-  private getPropertyType(value: any): string {
+  private getPropertyType(value: any, propertyName?: string): string {
     if (value === null) return 'null';
     if (value === undefined) return 'undefined';
     if (typeof value === 'string') return 'string';
-    if (typeof value === 'number') return 'number';
+    if (typeof value === 'number') {
+      // 检查是否为颜色属性
+      if (propertyName && propertyName.toLowerCase().includes('color')) {
+        return 'color';
+      }
+      return 'number';
+    }
     if (typeof value === 'boolean') return 'boolean';
     if (typeof value === 'function') return 'function';
     if (Array.isArray(value)) return 'array';

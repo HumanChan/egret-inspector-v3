@@ -1,7 +1,33 @@
 <template>
   <div class="properties-panel">
     <div class="properties-header">
-      <h3>Properties</h3>
+      <div class="header-top">
+        <h3>Properties</h3>
+        <div class="toggle-controls">
+          <label class="toggle-control">
+            <input
+              type="checkbox"
+              v-model="showInternal"
+              class="toggle-input"
+            />
+            <span class="toggle-slider">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-label">Internal</span>
+          </label>
+          <label class="toggle-control">
+            <input
+              type="checkbox"
+              v-model="showFunctions"
+              class="toggle-input"
+            />
+            <span class="toggle-slider">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-label">Functions</span>
+          </label>
+        </div>
+      </div>
       <div class="node-info" v-if="selectedNode">
         <span class="node-name">{{ selectedNode.name }}</span>
         <span class="node-type">{{ selectedNode.type }}</span>
@@ -165,7 +191,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, PropType } from 'vue';
+import { defineComponent, computed, ref, PropType, watch } from 'vue';
 import { Property } from './data';
 import PropertyItem from './property-item.vue';
 
@@ -188,6 +214,19 @@ export default defineComponent({
   setup(props, { emit }) {
     // 搜索状态
     const searchKeyword = ref('');
+    
+    // 显示控制状态
+    const showInternal = ref(false);
+    const showFunctions = ref(false);
+    
+    // 监听toggle状态变化
+    watch(showInternal, (newValue) => {
+      console.log('Show Internal changed:', newValue);
+    });
+    
+    watch(showFunctions, (newValue) => {
+      console.log('Show Functions changed:', newValue);
+    });
     
     // 调试信息
     console.log('Properties component props:', props);
@@ -234,6 +273,7 @@ export default defineComponent({
     
     // 属性分类（应用搜索过滤）
     const internalProperties = computed(() => {
+      if (!showInternal.value) return [];
       const baseProps = props.properties.filter(prop => 
         prop.name.startsWith('$')
       );
@@ -303,6 +343,7 @@ export default defineComponent({
     });
 
     const functionProperties = computed(() => {
+      if (!showFunctions.value) return [];
       const baseProps = props.properties.filter(prop => prop.type === 'function');
       const result = filterProperties(baseProps, searchKeyword.value);
       return result;
@@ -314,6 +355,8 @@ export default defineComponent({
 
     return {
       searchKeyword,
+      showInternal,
+      showFunctions,
       hasSearchResults,
       handleSearch,
       clearSearch,
@@ -347,11 +390,89 @@ export default defineComponent({
   background: #2d2d30;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
 .properties-header h3 {
-  margin: 0 0 8px 0;
+  margin: 0;
   font-size: 14px;
   font-weight: 600;
   color: #cccccc;
+  flex-shrink: 0;
+}
+
+.toggle-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toggle-control {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 11px;
+  color: #888;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.toggle-control:hover {
+  color: #cccccc;
+}
+
+.toggle-input {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 32px;
+  height: 16px;
+  background-color: #3e3e42;
+  border-radius: 8px;
+  margin: 0 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border: 1px solid #555;
+}
+
+.toggle-slider:hover {
+  background-color: #4a4a4f;
+  border-color: #666;
+}
+
+.toggle-thumb {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background-color: #888;
+  border-radius: 50%;
+  top: 1px;
+  left: 1px;
+  transition: transform 0.3s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-input:checked + .toggle-slider {
+  background-color: #4caf50;
+  border-color: #4caf50;
+}
+
+.toggle-input:checked + .toggle-slider .toggle-thumb {
+  transform: translateX(16px);
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-label {
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .node-info {

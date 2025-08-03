@@ -5,6 +5,7 @@
         type="checkbox"
         :checked="value"
         @change="handleChange"
+        @blur="handleBlur"
         class="toggle-input"
       />
       <span class="toggle-slider">
@@ -34,11 +35,17 @@ export default defineComponent({
   setup(props, { emit }) {
     const handleChange = (event: Event) => {
       const target = event.target as HTMLInputElement;
+      // 不立即更新，等待blur事件
+    };
+
+    const handleBlur = (event: Event) => {
+      const target = event.target as HTMLInputElement;
       emit('update', target.checked);
     };
 
     return {
-      handleChange
+      handleChange,
+      handleBlur
     };
   }
 });

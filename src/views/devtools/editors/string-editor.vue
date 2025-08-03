@@ -3,8 +3,8 @@
     <input
       type="text"
       :value="value"
-      @input="handleInput"
       @blur="handleBlur"
+      @keydown="handleKeydown"
       class="string-input"
       :placeholder="getPlaceholder()"
     />
@@ -36,9 +36,12 @@ export default defineComponent({
       return 'Enter value';
     };
 
-    const handleInput = (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      emit('update', target.value);
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        const target = event.target as HTMLInputElement;
+        emit('update', target.value);
+        target.blur(); // 失去焦点
+      }
     };
 
     const handleBlur = (event: Event) => {
@@ -48,7 +51,7 @@ export default defineComponent({
 
     return {
       getPlaceholder,
-      handleInput,
+      handleKeydown,
       handleBlur
     };
   }

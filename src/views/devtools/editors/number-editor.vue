@@ -3,8 +3,8 @@
     <input
       type="number"
       :value="value"
-      @input="handleInput"
       @blur="handleBlur"
+      @keydown="handleKeydown"
       class="number-input"
       :step="getStep()"
       :min="getMin()"
@@ -52,11 +52,14 @@ export default defineComponent({
       return undefined;
     };
 
-    const handleInput = (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      const newValue = parseFloat(target.value);
-      if (!isNaN(newValue)) {
-        emit('update', newValue);
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        const target = event.target as HTMLInputElement;
+        const newValue = parseFloat(target.value);
+        if (!isNaN(newValue)) {
+          emit('update', newValue);
+        }
+        target.blur(); // 失去焦点
       }
     };
 
@@ -72,7 +75,7 @@ export default defineComponent({
       getStep,
       getMin,
       getMax,
-      handleInput,
+      handleKeydown,
       handleBlur
     };
   }
