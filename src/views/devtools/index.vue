@@ -167,7 +167,7 @@ export default defineComponent({
       if (data.data) {
         if (data.data.success) {
           // Property updated successfully
-          // 属性更新成功后，刷新属性列表
+          // 属性更新成功后，刷新属性列表以确保数据一致性
           if (selectedNode.value && selectedNode.value.id) {
             // Refreshing node properties after update
             bridge.send(Msg.RequestNodeInfo, { uuid: selectedNode.value.id });
@@ -175,6 +175,8 @@ export default defineComponent({
         } else {
           console.warn('Property update failed:', data.data.error);
           errorMessage.value = data.data.error || 'Property update failed';
+          // 服务器更新失败，可以在这里回滚UI状态
+          // 但由于我们已经刷新了属性列表，所以不需要手动回滚
         }
       }
     };
@@ -204,6 +206,15 @@ export default defineComponent({
       // Selected node info
       
       if (selectedNode.value && selectedNode.value.id) {
+        // 乐观更新：立即更新UI中的属性值
+        const propertyIndex = nodeProperties.value.findIndex(p => p.name === property.name);
+        if (propertyIndex !== -1) {
+          nodeProperties.value[propertyIndex] = {
+            ...nodeProperties.value[propertyIndex],
+            value: newValue
+          };
+        }
+        
         // Sending property update request
         const requestData = {
           nodeId: selectedNode.value.id,

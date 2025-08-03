@@ -23,7 +23,7 @@ export class Inspector extends InjectEvent {
         const isEgretGame = this._isEgretGame();
         this.notifySupportGame(isEgretGame);
       }
-    }, 100);
+    }, 30);
   }
 
   onMessage(pluginEvent: PluginEvent): void {
@@ -302,6 +302,20 @@ export class Inspector extends InjectEvent {
         }
         
         // Visible property set successfully
+      } else if (propertyName === 'touchEnabled' || propertyName === 'touchChildren' || 
+                 propertyName === 'mouseEnabled' || propertyName === 'mouseChildren') {
+        // Setting boolean property
+        // 确保设置的是布尔值
+        const boolValue = Boolean(value);
+        currentObj[propertyName] = boolValue;
+        
+        // 对于 Egret 引擎，可能还需要设置对应的 $ 属性
+        const dollarProperty = '$' + propertyName;
+        if (currentObj[dollarProperty] !== undefined) {
+          currentObj[dollarProperty] = boolValue;
+        }
+        
+        // Boolean property set successfully
       } else if (propertyName.toLowerCase().includes('color') || propertyName === 'tintRGB') {
         // Setting color property
         // 确保颜色值是有效的数字

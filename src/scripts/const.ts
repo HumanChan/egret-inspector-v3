@@ -16,7 +16,7 @@ export const EGRET_CONSTANTS = {
   /**
    * Egret 引擎检测间隔时间（毫秒）
    */
-  DETECTION_INTERVAL: 300,
+  DETECTION_INTERVAL: 30,
   
   /**
    * Egret 引擎检测超时时间（毫秒）

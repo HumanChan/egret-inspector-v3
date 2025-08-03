@@ -35,7 +35,8 @@ export default defineComponent({
   setup(props, { emit }) {
     const handleChange = (event: Event) => {
       const target = event.target as HTMLInputElement;
-      // 不立即更新，等待blur事件
+      // 立即更新值，提供即时反馈
+      emit('update', target.checked);
     };
 
     const handleBlur = (event: Event) => {
