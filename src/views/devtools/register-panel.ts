@@ -11,18 +11,18 @@ export function registerPanel() {
     "icons/48.png",
     "views/devtools/index.html",
     (panel) => {
-      console.log("Egret Inspector panel created");
+      // Egret Inspector panel created
       
       // 面板显示时的处理
       panel.onShown.addListener((window) => {
-        console.log("Egret Inspector panel shown");
+        // Egret Inspector panel shown
         // 可以在这里发送初始化消息
         bridge.send(Msg.RequestSupport, {});
       });
       
       // 面板隐藏时的处理
       panel.onHidden.addListener(() => {
-        console.log("Egret Inspector panel hidden");
+        // Egret Inspector panel hidden
       });
     }
   );
@@ -32,29 +32,29 @@ export function registerPanel() {
  * 初始化 DevTools
  */
 export function init() {
-  console.log("Initializing Egret Inspector DevTools...");
+      // Initializing Egret Inspector DevTools
   
   // 注册面板
   registerPanel();
   
   // 监听消息
   bridge.on(Msg.ResponseSupport, (data) => {
-    console.log("Support response received:", data);
+          // Support response received
   });
   
   bridge.on(Msg.ResponseTreeInfo, (data) => {
-    console.log("Tree info response received:", data);
+          // Tree info response received
   });
   
   bridge.on(Msg.ResponseNodeInfo, (data) => {
-    console.log("Node info response received:", data);
+          // Node info response received
   });
   
   bridge.on(Msg.ResponseError, (data) => {
     console.error("Error response received:", data);
   });
   
-  console.log("Egret Inspector DevTools initialized");
+      // Egret Inspector DevTools initialized
 }
 
 // 自动初始化

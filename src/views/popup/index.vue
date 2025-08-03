@@ -27,7 +27,7 @@ export default defineComponent({
     const buttonText = ref("Open Panel");
 
     const openPanel = () => {
-      console.log("Opening panel from popup");
+      // Opening panel from popup
       // 这里可以添加打开面板的逻辑
     };
 

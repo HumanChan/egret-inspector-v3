@@ -5,7 +5,7 @@ import { Terminal } from "../../scripts/terminal";
 export type BridgeCallback = (data: PluginEvent, sender: chrome.runtime.Port) => void;
 
 if (chrome.devtools) {
-  console.log("chrome devtools");
+  // Chrome DevTools environment detected
 }
 
 class Bridge {
@@ -53,7 +53,7 @@ class Bridge {
   
   send(msg: Msg, data?: any) {
     if (this.connect) {
-      console.log('send===>>>>>>>>>>>>>>>',msg, data);
+      // Sending message to background
       let sendData = new PluginEvent(Page.Devtools, Page.Background, msg, data);
       this.connect.postMessage(sendData);
     } else {

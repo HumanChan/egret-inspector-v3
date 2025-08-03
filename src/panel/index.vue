@@ -61,17 +61,17 @@ export default defineComponent({
 
     const incrementCount = () => {
       count.value++;
-      console.log(`Button clicked ${count.value} times`);
+      // Button clicked
     };
 
     const toggleTheme = () => {
       isDarkTheme.value = !isDarkTheme.value;
       themeButtonText.value = isDarkTheme.value ? "Light Theme" : "Dark Theme";
-      console.log(`Theme toggled to ${isDarkTheme.value ? 'dark' : 'light'}`);
+      // Theme toggled
     };
 
     onMounted(() => {
-      console.log("Hello World Panel mounted!");
+      // Hello World Panel mounted
       updateTime();
       timer = setInterval(updateTime, 1000);
     });

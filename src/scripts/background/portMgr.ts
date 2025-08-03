@@ -98,7 +98,7 @@ export class PortMgr {
         portMan.send(data);
       });
     } else {
-      console.log("not find devtools port");
+      // not find devtools port
     }
   }
   getCurrentUsePort(tabID: number): PortMan | null {

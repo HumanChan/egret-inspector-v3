@@ -41,7 +41,7 @@ chrome.runtime.onMessage.addListener((request: PluginEvent, sender: any, sendRes
     if (event.check(Page.Content, Page.Background)) {
       //  监听来自content.js发来的事件，将消息转发到devtools
       event.reset(Page.Background, Page.Devtools);
-      console.log(`%c[Message]url:${sender.url}]\n${JSON.stringify(request)}`, "color:green"); 
+      // Message received 
       portMgr.sendDevtoolMsg(request, tabID);
     }
   }

@@ -1,6 +1,7 @@
 // eval 注入脚本的代码,变量尽量使用var,后来发现在import之后,let会自动变为var
 import { Msg, PluginEvent, RequestLogData, RequestNodeInfoData, RequestSetPropertyData, ResponseNodeInfoData, ResponseSetPropertyData, ResponseSupportData, ResponseTreeInfoData } from "../../core/types";
 import { InjectEvent } from "./event";
+import { DataType } from "../../views/devtools/data";
 
 // 全局类型声明
 declare global {
@@ -22,7 +23,7 @@ export class Inspector extends InjectEvent {
         const isEgretGame = this._isEgretGame();
         this.notifySupportGame(isEgretGame);
       }
-    }, 300);
+    }, 100);
   }
 
   onMessage(pluginEvent: PluginEvent): void {
@@ -43,7 +44,7 @@ export class Inspector extends InjectEvent {
       }
       case Msg.RequestSetProperty: {
         const data: RequestSetPropertyData = pluginEvent.data;
-        console.log('RequestSetProperty received:', data);
+        // RequestSetProperty received
         
         if (data.nodeId && data.propertyPath && data.value !== undefined) {
           const success = this.setNodeProperty(data.nodeId, data.propertyPath, data.value);
@@ -59,7 +60,7 @@ export class Inspector extends InjectEvent {
           this.sendMsgToContent(Msg.ResponseSetProperty, responseData);
           
           if (success) {
-            console.log('Property set successfully:', data.propertyPath.join('.'), '=', data.value);
+            // Property set successfully
           } else {
             console.warn('Failed to set property:', data.propertyPath.join('.'), '=', data.value);
           }
@@ -101,7 +102,7 @@ export class Inspector extends InjectEvent {
   }
 
   init() {
-    console.log(...this.terminal.init());
+    // Inspector initialized
     this.watchIsEgretGame();
   }
 
@@ -188,8 +189,7 @@ export class Inspector extends InjectEvent {
 
   getNodeInfo(uuid: string) {
     try {
-      console.log('getNodeInfo called for uuid:', uuid);
-      console.log('inspectorGameMemoryStorage keys:', Object.keys(this.inspectorGameMemoryStorage));
+      // Getting node info for uuid
       
       // 从存储中查找节点对象
       const node = this.inspectorGameMemoryStorage[uuid];
@@ -204,7 +204,7 @@ export class Inspector extends InjectEvent {
         return;
       }
 
-      console.log('Found node:', node);
+      // Found node
 
       // 获取节点属性
       const properties = this.getNodeProperties(node);
@@ -215,7 +215,7 @@ export class Inspector extends InjectEvent {
         timestamp: Date.now()
       };
       
-      console.log('Node info for', uuid, ':', nodeInfo);
+      // Node info for uuid
       this.sendMsgToContent(Msg.ResponseNodeInfo, nodeInfo as ResponseNodeInfoData);
     } catch (error) {
       console.error('Error getting node info:', error);
@@ -258,7 +258,7 @@ export class Inspector extends InjectEvent {
    */
   setNodeProperty(nodeId: string, propertyPath: string[], value: any): boolean {
     try {
-      console.log('setNodeProperty called:', nodeId, propertyPath, value);
+      // setNodeProperty called
       
       // 从存储中获取节点对象
       const node = this.inspectorGameMemoryStorage[nodeId];
@@ -267,9 +267,8 @@ export class Inspector extends InjectEvent {
         return false;
       }
 
-      console.log('Found node:', node);
-      console.log('Node type:', typeof node);
-      console.log('Node constructor:', node.constructor?.name);
+      // Found node
+      // Node type and constructor info
 
       // 验证属性值
       if (!this.validatePropertyValue(propertyPath[0], value)) {
@@ -291,7 +290,7 @@ export class Inspector extends InjectEvent {
       
       // 特殊处理 Egret 引擎的属性
       if (propertyName === 'visible') {
-        console.log('Setting visible property:', value);
+        // Setting visible property
         // 确保设置的是布尔值
         const boolValue = Boolean(value);
         currentObj[propertyName] = boolValue;
@@ -299,12 +298,12 @@ export class Inspector extends InjectEvent {
         // 对于 Egret 引擎，可能还需要设置 $visible
         if (currentObj.$visible !== undefined) {
           currentObj.$visible = boolValue;
-          console.log('Also set $visible:', boolValue);
+          // Also set $visible
         }
         
-        console.log('Visible property set successfully');
+        // Visible property set successfully
       } else if (propertyName.toLowerCase().includes('color') || propertyName === 'tintRGB') {
-        console.log('Setting color property:', propertyName, '=', value);
+        // Setting color property
         // 确保颜色值是有效的数字
         const colorValue = parseInt(value);
         if (!isNaN(colorValue)) {
@@ -313,10 +312,10 @@ export class Inspector extends InjectEvent {
           // 对于 Egret 引擎，可能还需要设置相关的颜色属性
           if (propertyName === 'tintRGB' && currentObj._tint !== undefined) {
             currentObj._tint = colorValue;
-            console.log('Also set _tint:', colorValue);
+            // Also set _tint
           }
           
-          console.log('Color property set successfully');
+          // Color property set successfully
         } else {
           console.warn('Invalid color value:', value);
           return false;
@@ -325,8 +324,7 @@ export class Inspector extends InjectEvent {
         currentObj[propertyName] = value;
       }
 
-      console.log('Property updated:', propertyPath.join('.'), '=', value);
-      console.log('New property value:', currentObj[propertyName]);
+      // Property updated successfully
       
       return true;
     } catch (error) {
@@ -432,7 +430,7 @@ export class Inspector extends InjectEvent {
       
       // 存储节点对象到内存中，以便后续获取属性
       this.inspectorGameMemoryStorage[uuid] = node;
-      console.log('Stored node in memory:', uuid, node);
+              // Stored node in memory
       
       // 处理子节点
       if (depth < 3) { // 限制深度避免性能问题
@@ -526,14 +524,14 @@ export class Inspector extends InjectEvent {
     const visited = new WeakSet();
     
     if (!obj || typeof obj !== 'object') {
-      console.log('getNodeProperties: obj is not an object', obj);
+      // getNodeProperties: obj is not an object
       return properties;
     }
 
     try {
       // 获取对象自身的属性
       const ownKeys = Object.getOwnPropertyNames(obj);
-      console.log('getNodeProperties: own keys:', ownKeys);
+      // getNodeProperties: own keys
       
       // 获取原型链上的属性
       let prototype = Object.getPrototypeOf(obj);
@@ -543,11 +541,11 @@ export class Inspector extends InjectEvent {
         prototypeKeys.push(...protoKeys);
         prototype = Object.getPrototypeOf(prototype);
       }
-      console.log('getNodeProperties: prototype keys:', prototypeKeys);
+      // getNodeProperties: prototype keys
       
       // 合并所有属性，去重
       const allKeys = [...new Set([...ownKeys, ...prototypeKeys])];
-      console.log('getNodeProperties: all keys:', allKeys);
+      // getNodeProperties: all keys
       
       for (const key of allKeys) {
         // 跳过私有属性（但不跳过Egret的内部属性）
@@ -556,7 +554,8 @@ export class Inspector extends InjectEvent {
         }
         
         // 跳过事件相关属性（通常包含循环引用）
-        if (key.includes('Event') || key.includes('Dispatcher')) {
+        // 但保留函数类型的属性，因为它们可能是有用的方法
+        if ((key.includes('Event') || key.includes('Dispatcher')) && typeof obj[key] !== 'function') {
           continue;
         }
         
@@ -574,8 +573,8 @@ export class Inspector extends InjectEvent {
           visited.add(value);
         }
         
-        // 跳过对象类型（但保留数组和函数）
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
+        // 跳过纯对象类型（但保留数组和函数）
+        if (value && typeof value === 'object' && !Array.isArray(value) && typeof value !== 'function') {
           continue;
         }
         
@@ -606,7 +605,7 @@ export class Inspector extends InjectEvent {
         return a.name.localeCompare(b.name);
       });
       
-      console.log('getNodeProperties: returning properties:', properties);
+      // getNodeProperties: returning properties
       
     } catch (error) {
       console.warn('Error getting node properties:', error);
@@ -636,22 +635,22 @@ export class Inspector extends InjectEvent {
   /**
    * 获取属性类型
    */
-  private getPropertyType(value: any, propertyName?: string): string {
-    if (value === null) return 'null';
-    if (value === undefined) return 'undefined';
-    if (typeof value === 'string') return 'string';
+  private getPropertyType(value: any, propertyName?: string): DataType {
+    if (value === null) return DataType.Null;
+    if (value === undefined) return DataType.Undefined;
+    if (typeof value === 'string') return DataType.String;
     if (typeof value === 'number') {
       // 检查是否为颜色属性
       if (propertyName && propertyName.toLowerCase().includes('color')) {
-        return 'color';
+        return DataType.Color;
       }
-      return 'number';
+      return DataType.Number;
     }
-    if (typeof value === 'boolean') return 'boolean';
-    if (typeof value === 'function') return 'function';
-    if (Array.isArray(value)) return 'array';
-    if (typeof value === 'object') return 'object';
-    return typeof value;
+    if (typeof value === 'boolean') return DataType.Boolean;
+    if (typeof value === 'function') return DataType.Function;
+    if (Array.isArray(value)) return DataType.Array;
+    if (typeof value === 'object') return DataType.Object;
+    return DataType.Invalid;
   }
 
   /**

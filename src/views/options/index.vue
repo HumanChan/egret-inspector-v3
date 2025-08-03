@@ -68,12 +68,12 @@ export default defineComponent({
 
     const toggleTheme = () => {
       currentTheme.value = currentTheme.value === "Light" ? "Dark" : "Light";
-      console.log(`Theme changed to ${currentTheme.value}`);
+      // Theme changed
     };
 
     const toggleLanguage = () => {
       currentLanguage.value = currentLanguage.value === "English" ? "中文" : "English";
-      console.log(`Language changed to ${currentLanguage.value}`);
+      // Language changed
     };
 
     return {

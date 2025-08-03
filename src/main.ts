@@ -4,11 +4,11 @@ import pluginConfig from "../cc-plugin.config";
 
 CCP.init(pluginConfig, {
   load: () => {
-    console.log("Egret Inspector loaded successfully!");
+    // Egret Inspector loaded successfully
   },
   builder: {
     onAfterBuild(target: BuilderOptions) {
-      console.log(`Build completed for target: ${target}`);
+      // Build completed for target
     },
   },
   messages: {

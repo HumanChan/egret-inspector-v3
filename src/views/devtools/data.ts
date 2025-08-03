@@ -223,13 +223,13 @@ export class TreeData {
 
   // 从NodeInfoData转换为TreeData
   static fromNodeInfo(nodeInfo: NodeInfoData): TreeData {
-    console.log('fromNodeInfo called with:', nodeInfo);
+    // fromNodeInfo called
     
     const treeData = new TreeData(nodeInfo.uuid, nodeInfo.name);
     treeData.active = true;
     treeData.id = nodeInfo.uuid; // 确保 id 被正确设置
     
-    console.log('Created TreeData:', treeData);
+    // Created TreeData
 
     // 递归转换子节点
     if (nodeInfo.children && nodeInfo.children.length > 0) {
@@ -251,7 +251,7 @@ export class TreeData {
 
   // 从扁平数组构建树形结构
   static buildTreeFromFlatArray(nodes: NodeInfoData[]): TreeData[] {
-    console.log('buildTreeFromFlatArray called with nodes:', nodes);
+    // buildTreeFromFlatArray called
     
     const nodeMap = new Map<string, NodeInfoData>();
     const rootNodes: NodeInfoData[] = [];
@@ -269,7 +269,7 @@ export class TreeData {
     });
 
     const result = rootNodes.map(node => TreeData.fromNodeInfo(node));
-    console.log('buildTreeFromFlatArray result:', result);
+    // buildTreeFromFlatArray result
     return result;
   }
 } 

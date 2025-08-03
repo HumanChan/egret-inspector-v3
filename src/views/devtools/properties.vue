@@ -192,7 +192,7 @@
 
 <script lang="ts">
 import { defineComponent, computed, ref, PropType, watch } from 'vue';
-import { Property } from './data';
+import { Property, DataType } from './data';
 import PropertyItem from './property-item.vue';
 
 export default defineComponent({
@@ -221,22 +221,21 @@ export default defineComponent({
     
     // 监听toggle状态变化
     watch(showInternal, (newValue) => {
-      console.log('Show Internal changed:', newValue);
+      // Show Internal changed
     });
     
     watch(showFunctions, (newValue) => {
-      console.log('Show Functions changed:', newValue);
+      // Show Functions changed
     });
     
     // 调试信息
-    console.log('Properties component props:', props);
-    console.log('selectedNode:', props.selectedNode);
-    console.log('properties:', props.properties);
+    // Properties component props
+    // selectedNode and properties info
     
     // 搜索处理函数
     const handleSearch = () => {
       // 搜索逻辑在computed属性中处理
-      console.log('Search keyword:', searchKeyword.value);
+      // Search keyword
     };
     
     // 清空搜索
@@ -344,7 +343,7 @@ export default defineComponent({
 
     const functionProperties = computed(() => {
       if (!showFunctions.value) return [];
-      const baseProps = props.properties.filter(prop => prop.type === 'function');
+      const baseProps = props.properties.filter(prop => prop.type === DataType.Function);
       const result = filterProperties(baseProps, searchKeyword.value);
       return result;
     });

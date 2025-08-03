@@ -60,7 +60,7 @@ export default defineComponent({
 
     // 节点点击事件
     const handleNodeClick = (data: TreeData | null) => {
-      console.log('Node clicked:', data);
+      // Node clicked
       if (data) {
         selectedUUID = data.id;
         emit('node-select', data);

@@ -83,18 +83,18 @@ export default defineComponent({
         return [];
       }
       
-      console.log('Converting tree data:', treeData.value);
+      // Converting tree data
       
       // 如果已经是树形结构，直接转换
       if (treeData.value.nodes.length === 1 && treeData.value.nodes[0].children) {
         const result = [TreeData.fromNodeInfo(treeData.value.nodes[0])];
-        console.log('Converted tree data (single root):', result);
+        // Converted tree data (single root)
         return result;
       }
       
       // 否则使用扁平数组构建树形结构
       const result = TreeData.buildTreeFromFlatArray(treeData.value.nodes);
-      console.log('Converted tree data (flat array):', result);
+              // Converted tree data (flat array)
       return result;
     });
 
@@ -124,7 +124,7 @@ export default defineComponent({
     };
 
     const handleSupportResponse = (data: any) => {
-      console.log('Support response:', data);
+      // Support response
       if (data.data) {
         engineDetected.value = data.data.support;
         if (data.data.support) {
@@ -134,25 +134,25 @@ export default defineComponent({
           // 引擎检测成功后自动获取节点树
           setTimeout(() => {
             requestTreeInfo();
-          }, 500);
+          }, 20);
         }
       }
     };
 
     const handleTreeInfoResponse = (data: any) => {
-      console.log('Tree info response:', data);
+      // Tree info response
       if (data.data) {
         treeData.value = data.data;
       }
     };
 
     const handleNodeInfoResponse = (data: any) => {
-      console.log('Node info response:', data);
+      // Node info response
       if (data.data && data.data.properties) {
-        console.log('Setting node properties:', data.data.properties);
+        // Setting node properties
         nodeProperties.value = data.data.properties;
       } else {
-        console.log('No properties found in response');
+        // No properties found in response
         nodeProperties.value = [];
       }
     };
@@ -163,13 +163,13 @@ export default defineComponent({
     };
 
     const handleSetPropertyResponse = (data: any) => {
-      console.log('Set property response:', data);
+      // Set property response
       if (data.data) {
         if (data.data.success) {
-          console.log('Property updated successfully');
+          // Property updated successfully
           // 属性更新成功后，刷新属性列表
           if (selectedNode.value && selectedNode.value.id) {
-            console.log('Refreshing node properties after update');
+            // Refreshing node properties after update
             bridge.send(Msg.RequestNodeInfo, { uuid: selectedNode.value.id });
           }
         } else {
@@ -180,12 +180,12 @@ export default defineComponent({
     };
 
     const handleNodeSelect = (node: TreeData) => {
-      console.log('Node selected:', node);
+      // Node selected
       selectedNode.value = node;
       
       // 获取节点属性
       if (node && node.id) {
-        console.log('Requesting node info for:', node.id);
+        // Requesting node info
         bridge.send(Msg.RequestNodeInfo, { uuid: node.id });
       } else {
         console.warn('Node has no id:', node);
@@ -193,35 +193,33 @@ export default defineComponent({
     };
 
     const handleNodeUnselect = () => {
-      console.log('Node unselected');
+      // Node unselected
       selectedNode.value = null;
       nodeProperties.value = [];
     };
 
     const handlePropertyUpdate = (property: Property, newValue: any) => {
-      console.log('=== PROPERTY UPDATE START ===');
-      console.log('Property update:', property.name, '=', newValue);
-      console.log('Property type:', property.type);
-      console.log('Property path:', property.path);
-      console.log('Selected node:', selectedNode.value);
+      // === PROPERTY UPDATE START ===
+      // Property update info
+      // Selected node info
       
       if (selectedNode.value && selectedNode.value.id) {
-        console.log('Sending property update request');
+        // Sending property update request
         const requestData = {
           nodeId: selectedNode.value.id,
           propertyPath: property.path,
           value: newValue
         };
-        console.log('Request data:', requestData);
+        // Request data
         bridge.send(Msg.RequestSetProperty, requestData);
       } else {
         console.warn('No selected node for property update');
       }
-      console.log('=== PROPERTY UPDATE END ===');
+      // === PROPERTY UPDATE END ===
     };
 
     onMounted(() => {
-      console.log('Egret Inspector Panel mounted');
+      // Egret Inspector Panel mounted
       
       // 监听消息
       bridge.on(Msg.ResponseSupport, handleSupportResponse);
@@ -236,11 +234,11 @@ export default defineComponent({
       // 自动请求引擎检测
       setTimeout(() => {
         requestSupport();
-      }, 500);
+      }, 20);
     });
 
     onUnmounted(() => {
-      console.log('Egret Inspector Panel unmounted');
+      // Egret Inspector Panel unmounted
     });
 
           return {
