@@ -1,41 +1,31 @@
 <template>
   <div class="color-editor">
-    <div class="color-preview" 
-         :style="{ backgroundColor: colorValue }"
-         @click="showColorPicker = !showColorPicker">
-    </div>
+    <CCColor 
+      :color="colorValue"
+      @change="handleColorChange"
+      class="color-picker-component"
+    />
     <input
-      type="number"
-      :value="value"
-      @blur="handleBlur"
+      type="text"
+      :value="hexValue"
+      @blur="handleHexBlur"
       @keydown="handleKeydown"
       class="color-input"
-      :min="0"
-      :max="0xFFFFFF"
+      placeholder="#000000"
     />
-    <div v-if="showColorPicker" class="color-picker-overlay" @click="closeColorPicker">
-      <div class="color-picker" @click.stop>
-        <input
-          type="color"
-          :value="colorValue"
-          @input="handleColorChange"
-          class="color-picker-input"
-        />
-        <div class="color-picker-info">
-          <span>HEX: {{ colorValue }}</span>
-          <span>RGB: {{ rgbValue }}</span>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, computed, ref } from 'vue';
+import ccui from "@xuyanfeng/cc-ui";
+import { defineComponent, PropType, computed } from 'vue';
 import { Property } from '../data';
+
+const { CCColor } = ccui.components;
 
 export default defineComponent({
   name: 'ColorEditor',
+  components: { CCColor },
   props: {
     property: {
       type: Object as PropType<Property>,
@@ -48,11 +38,57 @@ export default defineComponent({
   },
   emits: ['update'],
   setup(props, { emit }) {
-    const showColorPicker = ref(false);
-
     // 将数值转换为颜色值
     const colorValue = computed(() => {
-      const hex = props.value.toString(16).padStart(6, '0');
+      let colorNum = 0;
+      
+      // 处理不同的颜色值格式
+      if (typeof props.value === 'number') {
+        colorNum = props.value;
+      } else if (typeof props.value === 'string') {
+        const strValue = props.value as string;
+        // 如果是字符串格式，尝试解析
+        if (strValue.startsWith('#')) {
+          colorNum = parseInt(strValue.substring(1), 16);
+        } else if (strValue.startsWith('0x')) {
+          colorNum = parseInt(strValue.substring(2), 16);
+        } else {
+          colorNum = parseInt(strValue, 16);
+        }
+      }
+      
+      // 确保颜色值在有效范围内
+      if (isNaN(colorNum) || colorNum < 0) colorNum = 0;
+      if (colorNum > 0xFFFFFF) colorNum = 0xFFFFFF;
+      
+      const hex = colorNum.toString(16).padStart(6, '0');
+      return `#${hex}`;
+    });
+
+    // 将数值转换为十六进制显示值
+    const hexValue = computed(() => {
+      let colorNum = 0;
+      
+      // 处理不同的颜色值格式
+      if (typeof props.value === 'number') {
+        colorNum = props.value;
+      } else if (typeof props.value === 'string') {
+        const strValue = props.value as string;
+        // 如果是字符串格式，尝试解析
+        if (strValue.startsWith('#')) {
+          colorNum = parseInt(strValue.substring(1), 16);
+        } else if (strValue.startsWith('0x')) {
+          colorNum = parseInt(strValue.substring(2), 16);
+        } else {
+          colorNum = parseInt(strValue, 16);
+        }
+      }
+      
+      // 确保颜色值在有效范围内
+      if (isNaN(colorNum) || colorNum < 0) colorNum = 0;
+      if (colorNum > 0xFFFFFF) colorNum = 0xFFFFFF;
+      
+      const hex = colorNum.toString(16).padStart(6, '0');
       return `#${hex}`;
     });
 
@@ -64,10 +100,18 @@ export default defineComponent({
       return `rgb(${r}, ${g}, ${b})`;
     });
 
-    const handleBlur = (event: Event) => {
+    const handleHexBlur = (event: Event) => {
       const target = event.target as HTMLInputElement;
-      const newValue = parseInt(target.value);
-      if (!isNaN(newValue)) {
+      const hexValue = target.value.trim();
+      
+      // 验证十六进制格式
+      if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
+        const hex = hexValue.substring(1); // 移除#前缀
+        const newValue = parseInt(hex, 16);
+        emit('update', newValue);
+      } else if (/^[0-9A-Fa-f]{6}$/.test(hexValue)) {
+        // 如果没有#前缀，自动添加
+        const newValue = parseInt(hexValue, 16);
         emit('update', newValue);
       }
     };
@@ -75,35 +119,33 @@ export default defineComponent({
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
         const target = event.target as HTMLInputElement;
-        const newValue = parseInt(target.value);
-        if (!isNaN(newValue)) {
+        const hexValue = target.value.trim();
+        
+        if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
+          const hex = hexValue.substring(1);
+          const newValue = parseInt(hex, 16);
+          emit('update', newValue);
+        } else if (/^[0-9A-Fa-f]{6}$/.test(hexValue)) {
+          const newValue = parseInt(hexValue, 16);
           emit('update', newValue);
         }
-        target.blur(); // 失去焦点
+        target.blur();
       }
     };
 
-    const handleColorChange = (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      const hexValue = target.value.substring(1); // 移除#前缀
+    const handleColorChange = (color: string) => {
+      const hexValue = color.substring(1); // 移除#前缀
       const newValue = parseInt(hexValue, 16);
       emit('update', newValue);
     };
 
-    const closeColorPicker = () => {
-      showColorPicker.value = false;
-      // 确保在关闭时触发一次更新，以防颜色选择器的值没有正确同步
-      emit('update', props.value);
-    };
-
     return {
-      showColorPicker,
       colorValue,
+      hexValue,
       rgbValue,
-      handleBlur,
+      handleHexBlur,
       handleKeydown,
-      handleColorChange,
-      closeColorPicker
+      handleColorChange
     };
   }
 });
@@ -117,18 +159,8 @@ export default defineComponent({
   position: relative;
 }
 
-.color-preview {
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
-  border: 1px solid #3e3e42;
-  cursor: pointer;
-  transition: border-color 0.2s;
+.color-picker-component {
   flex-shrink: 0;
-}
-
-.color-preview:hover {
-  border-color: #4caf50;
 }
 
 .color-input {
@@ -146,49 +178,5 @@ export default defineComponent({
   outline: none;
   border-color: #4caf50;
   background: #2d2d30;
-}
-
-.color-picker-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.color-picker {
-  background: #2d2d30;
-  border: 1px solid #3e3e42;
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 200px;
-}
-
-.color-picker-input {
-  width: 100%;
-  height: 40px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.color-picker-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: #cccccc;
-}
-
-.color-picker-info span {
-  font-family: 'Consolas', 'Monaco', monospace;
 }
 </style> 

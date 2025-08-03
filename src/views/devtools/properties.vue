@@ -232,10 +232,11 @@ export default defineComponent({
     // Properties component props
     // selectedNode and properties info
     
+
+    
     // 搜索处理函数
     const handleSearch = () => {
       // 搜索逻辑在computed属性中处理
-      // Search keyword
     };
     
     // 清空搜索

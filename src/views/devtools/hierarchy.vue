@@ -6,6 +6,7 @@
         :value="treeDataWithVisible" 
         :expand-keys="expandedKeys" 
         :default-expand-all="false"
+        :search="true"
         @node-expand="onNodeExpand" 
         @node-collapse="onNodeCollapse" 
         @node-click="handleNodeClick" 
@@ -59,6 +60,8 @@ export default defineComponent({
       
       return addVisibleClass(props.treeData);
     });
+
+
 
     // 节点展开事件
     const onNodeExpand = (data: TreeData) => {
@@ -167,6 +170,8 @@ export default defineComponent({
   scrollbar-width: thin;
   scrollbar-color: #3e3e42 #2d2d30;
 }
+
+
 
 /* 根据节点visible状态设置透明度 */
 .hierarchy-panel :deep(.cc-tree-node) {
