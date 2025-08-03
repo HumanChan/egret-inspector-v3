@@ -26,6 +26,7 @@
             :treeData="convertedTreeData" 
             @node-select="handleNodeSelect"
             @node-unselect="handleNodeUnselect"
+            @node-visibility-toggle="handleNodeVisibilityToggle"
           />
         </div>
         
@@ -181,6 +182,19 @@ export default defineComponent({
       }
     };
 
+    const handleVisibleResponse = (data: any) => {
+      // Visible response
+      if (data.data) {
+        if (data.data.success) {
+          // Visible property updated successfully
+          console.log('Node visibility updated successfully');
+        } else {
+          console.warn('Visible update failed:', data.data.error);
+          errorMessage.value = data.data.error || 'Visible update failed';
+        }
+      }
+    };
+
     const handleNodeSelect = (node: TreeData) => {
       // Node selected
       selectedNode.value = node;
@@ -229,6 +243,18 @@ export default defineComponent({
       // === PROPERTY UPDATE END ===
     };
 
+    const handleNodeVisibilityToggle = (data: { nodeId: string; visible: boolean }) => {
+      // Node visibility toggle
+      if (data.nodeId) {
+        // 发送可见性切换请求
+        const requestData = {
+          nodeId: data.nodeId,
+          visible: data.visible
+        };
+        bridge.send(Msg.RequestVisible, requestData);
+      }
+    };
+
     onMounted(() => {
       // Egret Inspector Panel mounted
       
@@ -238,6 +264,7 @@ export default defineComponent({
       bridge.on(Msg.ResponseNodeInfo, handleNodeInfoResponse);
       bridge.on(Msg.ResponseError, handleErrorResponse);
       bridge.on(Msg.ResponseSetProperty, handleSetPropertyResponse);
+      bridge.on(Msg.ResponseVisible, handleVisibleResponse);
       
       // 更新连接状态
       updateConnectionStatus('connected');
@@ -266,7 +293,8 @@ export default defineComponent({
         nodeProperties,
         handleNodeSelect,
         handleNodeUnselect,
-        handlePropertyUpdate
+        handlePropertyUpdate,
+        handleNodeVisibilityToggle
       };
   }
 });

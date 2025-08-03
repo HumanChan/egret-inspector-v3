@@ -70,6 +70,18 @@ export type ResponseSetPropertyData = {
 export type RequestLogData = string[];
 export type ResponseErrorData = string;
 
+export type RequestVisibleData = {
+  nodeId: string;
+  visible: boolean;
+};
+
+export type ResponseVisibleData = {
+  success: boolean;
+  nodeId?: string;
+  visible?: boolean;
+  error?: string;
+};
+
 export enum Msg {
   None = "None",
   /**
@@ -110,6 +122,7 @@ export enum Msg {
   RequestSetProperty = "request-set-property",
   ResponseSetProperty = "response-set-property",
   RequestVisible = "request-visible",
+  ResponseVisible = "response-visible",
   RequestDestroy = "request-destroy",
 
   ResponseError = "response-error",

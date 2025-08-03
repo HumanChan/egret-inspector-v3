@@ -174,6 +174,7 @@ export interface NodeInfoData {
   properties: Property[];
   children: NodeInfoData[];
   timestamp: number;
+  visible?: boolean;
 }
 
 // 帧详情数据
@@ -214,18 +215,20 @@ export class TreeData {
   id: string = "";
   active: boolean = true;
   text: string = "";
+  visible: boolean = true;
   children: TreeData[] = [];
 
-  constructor(id: string = "", text: string = "") {
+  constructor(id: string = "", text: string = "", visible: boolean = true) {
     this.id = id;
     this.text = text;
+    this.visible = visible;
   }
 
   // 从NodeInfoData转换为TreeData
   static fromNodeInfo(nodeInfo: NodeInfoData): TreeData {
     // fromNodeInfo called
     
-    const treeData = new TreeData(nodeInfo.uuid, nodeInfo.name);
+    const treeData = new TreeData(nodeInfo.uuid, nodeInfo.name, nodeInfo.visible !== undefined ? nodeInfo.visible : true);
     treeData.active = true;
     treeData.id = nodeInfo.uuid; // 确保 id 被正确设置
     
@@ -242,7 +245,7 @@ export class TreeData {
   // 从TreeData数组转换为cc-ui需要的格式
   static fromTreeDataArray(treeDataArray: TreeData[]): TreeData[] {
     return treeDataArray.map(item => {
-      const treeData = new TreeData(item.id, item.text);
+      const treeData = new TreeData(item.id, item.text, item.visible);
       treeData.active = item.active;
       treeData.children = TreeData.fromTreeDataArray(item.children);
       return treeData;

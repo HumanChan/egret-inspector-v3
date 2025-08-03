@@ -1,5 +1,5 @@
 // eval 注入脚本的代码,变量尽量使用var,后来发现在import之后,let会自动变为var
-import { Msg, PluginEvent, RequestLogData, RequestNodeInfoData, RequestSetPropertyData, ResponseNodeInfoData, ResponseSetPropertyData, ResponseSupportData, ResponseTreeInfoData } from "../../core/types";
+import { Msg, PluginEvent, RequestLogData, RequestNodeInfoData, RequestSetPropertyData, RequestVisibleData, ResponseNodeInfoData, ResponseSetPropertyData, ResponseSupportData, ResponseTreeInfoData } from "../../core/types";
 import { InjectEvent } from "./event";
 import { DataType } from "../../views/devtools/data";
 
@@ -81,11 +81,39 @@ export class Inspector extends InjectEvent {
         break;
       }
       case Msg.RequestVisible: {
-        const uuid: string = pluginEvent.data;
-        const node = this.inspectorGameMemoryStorage[uuid];
-        if (node) {
-          // 暂时不实现可见性切换功能
-          console.warn("Visibility toggle not implemented yet");
+        const data: RequestVisibleData = pluginEvent.data;
+        if (data.nodeId && data.visible !== undefined) {
+          const node = this.inspectorGameMemoryStorage[data.nodeId];
+          if (node) {
+            const success = this.setNodeVisible(data.nodeId, data.visible);
+            
+            // 发送响应
+            const responseData = {
+              success: success,
+              nodeId: data.nodeId,
+              visible: data.visible
+            };
+            
+            this.sendMsgToContent(Msg.ResponseVisible, responseData);
+            
+            if (success) {
+              // Visible property set successfully
+            } else {
+              console.warn('Failed to set visible property for node:', data.nodeId);
+            }
+          } else {
+            console.warn('Node not found:', data.nodeId);
+            this.sendMsgToContent(Msg.ResponseVisible, {
+              success: false,
+              error: 'Node not found'
+            });
+          }
+        } else {
+          console.warn('Invalid RequestVisible data:', data);
+          this.sendMsgToContent(Msg.ResponseVisible, {
+            success: false,
+            error: 'Invalid data'
+          });
         }
         break;
       }
@@ -249,6 +277,37 @@ export class Inspector extends InjectEvent {
       obj[pathArray[pathArray.length - 1]] = value;
       return true;
     } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * 设置节点可见性
+   */
+  setNodeVisible(nodeId: string, visible: boolean): boolean {
+    try {
+      const node = this.inspectorGameMemoryStorage[nodeId];
+      if (!node) {
+        console.warn('Node not found for visible setting:', nodeId);
+        return false;
+      }
+
+      // 尝试设置 visible 属性
+      if (node.visible !== undefined) {
+        node.visible = visible;
+        return true;
+      }
+
+      // 如果没有 visible 属性，尝试设置 alpha 属性
+      if (node.alpha !== undefined) {
+        node.alpha = visible ? 1 : 0;
+        return true;
+      }
+
+      console.warn('Node does not have visible or alpha property:', nodeId);
+      return false;
+    } catch (error) {
+      console.error('Error setting node visible:', error);
       return false;
     }
   }
