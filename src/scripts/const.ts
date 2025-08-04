@@ -35,6 +35,40 @@ export const EGRET_CONSTANTS = {
 } as const;
 
 /**
+ * FPS 监控相关常量
+ */
+export const FPS_CONSTANTS = {
+  /**
+   * FPS 更新间隔（毫秒）
+   */
+  UPDATE_INTERVAL: 500,
+  
+  /**
+   * FPS 历史数据最大长度
+   */
+  MAX_HISTORY_LENGTH: 60,
+  
+  /**
+   * FPS 图表宽度
+   */
+  CHART_WIDTH: 400,
+  
+  /**
+   * FPS 图表高度
+   */
+  CHART_HEIGHT: 150,
+  
+  /**
+   * 性能等级阈值
+   */
+  PERFORMANCE_THRESHOLDS: {
+    EXCELLENT: 50,
+    GOOD: 30,
+    POOR: 15,
+  },
+} as const;
+
+/**
  * 调试相关常量
  */
 export const DEBUG_CONSTANTS = {

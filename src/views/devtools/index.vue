@@ -15,11 +15,24 @@
     </div>
     
     <div class="content">
+      <div class="tabs">
+        <button 
+          @click="activeTab = 'hierarchy'" 
+          :class="{ active: activeTab === 'hierarchy' }"
+          class="tab-btn"
+        >
+          层级结构
+        </button>
+        <button 
+          @click="activeTab = 'fps'" 
+          :class="{ active: activeTab === 'fps' }"
+          class="tab-btn"
+        >
+          FPS 监控
+        </button>
+      </div>
 
-      
-
-      
-      <div class="main-content" v-if="treeData && treeData.nodes">
+      <div class="main-content" v-if="treeData && treeData.nodes && activeTab === 'hierarchy'">
         <!-- Hierarchy Section -->
         <div class="hierarchy-section">
           <Hierarchy 
@@ -39,9 +52,12 @@
           />
         </div>
       </div>
-      
 
-      
+      <div class="main-content" v-if="activeTab === 'fps'">
+        <!-- FPS Panel -->
+        <FpsPanel />
+      </div>
+
       <div class="section" v-if="errorMessage">
         <h2>Error</h2>
         <div class="error">
@@ -59,12 +75,14 @@ import { Msg } from '../../core/types';
 import { TreeData, Property } from './data';
 import Hierarchy from './hierarchy.vue';
 import Properties from './properties.vue';
+import FpsPanel from './fps-panel.vue';
 
 export default defineComponent({
   name: 'EgretInspectorPanel',
   components: {
     Hierarchy,
-    Properties
+    Properties,
+    FpsPanel
   },
   setup() {
     const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('connecting');
@@ -77,6 +95,7 @@ export default defineComponent({
     const errorMessage = ref('');
     const selectedNode = ref<TreeData | null>(null);
     const nodeProperties = ref<Property[]>([]);
+    const activeTab = ref<'hierarchy' | 'fps'>('hierarchy');
 
     // 转换树数据为cc-ui需要的格式
     const convertedTreeData = computed(() => {
@@ -195,6 +214,24 @@ export default defineComponent({
       }
     };
 
+    const handleFpsResponse = (data: any) => {
+      // FPS response
+      if (data.data) {
+        if (data.data.success) {
+          console.log('FPS monitoring response:', data.data);
+        } else {
+          console.warn('FPS monitoring failed:', data.data.error);
+          errorMessage.value = data.data.error || 'FPS monitoring failed';
+        }
+      }
+    };
+
+    const handleFpsUpdate = (data: any) => {
+      // FPS update
+      console.log('FPS update received:', data);
+      // FPS 更新事件会通过 FpsPanel 组件处理
+    };
+
     const handleNodeSelect = (node: TreeData) => {
       // Node selected
       selectedNode.value = node;
@@ -265,6 +302,8 @@ export default defineComponent({
       bridge.on(Msg.ResponseError, handleErrorResponse);
       bridge.on(Msg.ResponseSetProperty, handleSetPropertyResponse);
       bridge.on(Msg.ResponseVisible, handleVisibleResponse);
+      bridge.on(Msg.ResponseFpsData, handleFpsResponse);
+      bridge.on(Msg.FpsUpdate, handleFpsUpdate);
       
       // 更新连接状态
       updateConnectionStatus('connected');
@@ -291,6 +330,7 @@ export default defineComponent({
         errorMessage,
         selectedNode,
         nodeProperties,
+        activeTab,
         handleNodeSelect,
         handleNodeUnselect,
         handlePropertyUpdate,
@@ -370,24 +410,31 @@ export default defineComponent({
   height: calc(100vh - 80px);
 }
 
-.section {
-  background: #252526;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  border: 1px solid #3e3e42;
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #3e3e42;
 }
 
-.section h2 {
-  margin: 0 0 12px 0;
+.tab-btn {
+  padding: 8px 12px;
+  background: #3e3e42;
+  border: 1px solid #3e3e42;
+  border-radius: 4px 4px 0 0;
+  color: #cccccc;
   font-size: 14px;
   font-weight: 600;
-  color: #cccccc;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
 }
 
-
-
-
+.tab-btn.active {
+  background: #252526;
+  border-bottom: 1px solid #252526;
+  border-color: #252526;
+  color: #4caf50; /* Highlight color for active tab */
+}
 
 .main-content {
   display: flex;

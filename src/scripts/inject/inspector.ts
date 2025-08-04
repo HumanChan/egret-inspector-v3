@@ -1,7 +1,8 @@
 // eval 注入脚本的代码,变量尽量使用var,后来发现在import之后,let会自动变为var
-import { Msg, PluginEvent, RequestLogData, RequestNodeInfoData, RequestSetPropertyData, RequestVisibleData, ResponseNodeInfoData, ResponseSetPropertyData, ResponseSupportData, ResponseTreeInfoData } from "../../core/types";
+import { Msg, PluginEvent, RequestLogData, RequestNodeInfoData, RequestSetPropertyData, RequestVisibleData, ResponseNodeInfoData, ResponseSetPropertyData, ResponseSupportData, ResponseTreeInfoData, RequestFpsDataData, ResponseFpsDataData } from "../../core/types";
 import { InjectEvent } from "./event";
 import { DataType } from "../../views/devtools/data";
+import { FpsProfiler } from "./fps-profiler";
 
 // 全局类型声明
 declare global {
@@ -14,6 +15,7 @@ declare global {
 
 export class Inspector extends InjectEvent {
   inspectorGameMemoryStorage: Record<string, any> = {};
+  private fpsProfiler: FpsProfiler | null = null;
 
   private watchIsEgretGame() {
     const timer = setInterval(() => {
@@ -99,7 +101,7 @@ export class Inspector extends InjectEvent {
             if (success) {
               // Visible property set successfully
             } else {
-              console.warn('Failed to set visible property for node:', data.nodeId);
+              console.warn('Failed to set visible property:', data.nodeId, '=', data.visible);
             }
           } else {
             console.warn('Node not found:', data.nodeId);
@@ -115,6 +117,11 @@ export class Inspector extends InjectEvent {
             error: 'Invalid data'
           });
         }
+        break;
+      }
+      case Msg.RequestFpsData: {
+        const data: RequestFpsDataData = pluginEvent.data;
+        this.handleFpsRequest(data);
         break;
       }
       case Msg.RequestDestroy: {
@@ -864,5 +871,55 @@ export class Inspector extends InjectEvent {
     }
     
     return String(value);
+  }
+
+  /**
+   * 处理 FPS 请求
+   */
+  private handleFpsRequest(data: RequestFpsDataData): void {
+    try {
+      if (data.enable) {
+        // 启动 FPS 监控
+        if (!this.fpsProfiler) {
+          this.fpsProfiler = new FpsProfiler();
+          this.fpsProfiler.start();
+          
+          // 监听 FPS 更新事件
+          document.addEventListener('fps-update', (event: CustomEvent) => {
+            try {
+              const fpsData = event.detail;
+              this.sendMsgToContent(Msg.FpsUpdate, fpsData);
+            } catch (error) {
+              console.error('Failed to handle FPS update event:', error);
+            }
+          });
+        }
+        
+        // 发送当前 FPS 数据
+        const fpsData = this.fpsProfiler.getFpsData();
+        this.sendMsgToContent(Msg.ResponseFpsData, {
+          success: true,
+          data: fpsData
+        });
+      } else {
+        // 停止 FPS 监控
+        if (this.fpsProfiler) {
+          this.fpsProfiler.stop();
+          this.fpsProfiler.destroy();
+          this.fpsProfiler = null;
+        }
+        
+        this.sendMsgToContent(Msg.ResponseFpsData, {
+          success: true,
+          data: { fps: 0, timestamp: Date.now(), history: [] }
+        });
+      }
+    } catch (error) {
+      console.error('FPS request handling error:', error);
+      this.sendMsgToContent(Msg.ResponseFpsData, {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   }
 }

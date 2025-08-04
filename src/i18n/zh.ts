@@ -11,4 +11,20 @@ export const devtoolsTitle = "Egret Inspector 开发者工具";
 export const devtoolsDescription = "白鹭游戏引擎的 Chrome 开发者工具面板";
 export const devtoolsGreeting = "来自 Egret Inspector 的问候！";
 export const panelTypeLabel = "面板类型";
-export const devtoolsPanelType = "开发者工具面板"; 
+export const devtoolsPanelType = "开发者工具面板";
+
+// FPS 监控相关翻译
+export const fpsMonitoring = "FPS 监控";
+export const fpsStart = "开始";
+export const fpsStop = "停止";
+export const fpsClearHistory = "清空历史";
+export const fpsPerformance = "性能";
+export const fpsExcellent = "优秀";
+export const fpsGood = "良好";
+export const fpsPoor = "较差";
+export const fpsCritical = "严重";
+export const fpsStatus = "状态";
+export const fpsRunning = "运行中";
+export const fpsStopped = "已停止";
+export const fpsUpdateInterval = "更新间隔";
+export const fpsDataPoints = "数据点数"; 

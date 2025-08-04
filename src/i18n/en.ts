@@ -9,6 +9,22 @@ export const infoLabel = "Extension Name";
 export const versionLabel = "Version";
 export const devtoolsTitle = "Egret Inspector DevTools";
 export const devtoolsDescription = "Chrome DevTools panel for Egret Engine";
-export const devtoolsGreeting = "Hello from Egret Inspector!";
+export const devtoolsGreeting = "Greetings from Egret Inspector!";
 export const panelTypeLabel = "Panel Type";
-export const devtoolsPanelType = "DevTools Panel"; 
+export const devtoolsPanelType = "DevTools Panel";
+
+// FPS monitoring related translations
+export const fpsMonitoring = "FPS Monitoring";
+export const fpsStart = "Start";
+export const fpsStop = "Stop";
+export const fpsClearHistory = "Clear History";
+export const fpsPerformance = "Performance";
+export const fpsExcellent = "Excellent";
+export const fpsGood = "Good";
+export const fpsPoor = "Poor";
+export const fpsCritical = "Critical";
+export const fpsStatus = "Status";
+export const fpsRunning = "Running";
+export const fpsStopped = "Stopped";
+export const fpsUpdateInterval = "Update Interval";
+export const fpsDataPoints = "Data Points"; 

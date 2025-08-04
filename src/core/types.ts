@@ -99,7 +99,10 @@ export enum Msg {
    */
   RequestSupport = "request-support",
   ResponseSupport = "response-support",
-
+  /**
+   * 内存信息
+   */
+  RequestMemoryInfo = "request-memory-info",
   ResponseMemoryInfo = "response-memory-info",
   MemoryInfo = "memory-info",
   /**
@@ -124,6 +127,13 @@ export enum Msg {
   RequestVisible = "request-visible",
   ResponseVisible = "response-visible",
   RequestDestroy = "request-destroy",
+
+  /**
+   * FPS 监控相关消息
+   */
+  RequestFpsData = "request-fps-data",
+  ResponseFpsData = "response-fps-data",
+  FpsUpdate = "fps-update",
 
   ResponseError = "response-error",
 }
@@ -235,6 +245,22 @@ export class PluginEvent {
     }
   }
 }
+
+export type RequestFpsDataData = {
+  enable: boolean;
+};
+
+export interface FpsData {
+  fps: number;
+  timestamp: number;
+  history: number[];
+}
+
+export type ResponseFpsDataData = {
+  success: boolean;
+  data?: FpsData;
+  error?: string;
+};
 
 function inEnum(enumValues: any, value: Page | Msg) {
   for (let key in enumValues) {
