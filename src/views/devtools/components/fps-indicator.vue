@@ -1,14 +1,12 @@
 <template>
-  <div class="fps-indicator" :class="performanceClass">
-    <div class="fps-value">{{ currentFps }}</div>
-    <div class="fps-label">FPS</div>
-    <div class="performance-status">{{ performanceStatus }}</div>
+  <div class="simple-fps">
+    <span class="fps-number" :style="{ color: fpsColor, textShadow: `0 0 12px ${textShadowColor}` }">{{ currentFps }}</span>
+    <span class="fps-label" :style="{ color: fpsColor }">fps</span>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, computed } from 'vue';
-import { FPS_CONSTANTS } from '../../../scripts/const';
 
 export default defineComponent({
   name: 'FpsIndicator',
@@ -23,96 +21,62 @@ export default defineComponent({
       return Math.round(props.fps);
     });
 
-    const performanceClass = computed(() => {
-      const { PERFORMANCE_THRESHOLDS } = FPS_CONSTANTS;
-      if (props.fps >= PERFORMANCE_THRESHOLDS.EXCELLENT) return 'excellent';
-      if (props.fps >= PERFORMANCE_THRESHOLDS.GOOD) return 'good';
-      if (props.fps >= PERFORMANCE_THRESHOLDS.POOR) return 'poor';
-      return 'critical';
+    // 根据 FPS 值计算颜色
+    const fpsColor = computed(() => {
+      const fps = props.fps;
+      if (fps >= 55) {
+        return '#4caf50'; // 绿色 - 优秀
+      } else if (fps >= 50) {
+        return '#ffd700'; // 黄色 - 良好
+      } else if (fps >= 45) {
+        return '#ff9800'; // 橙色 - 一般
+      } else {
+        return '#f44336'; // 红色 - 较差
+      }
     });
 
-    const performanceStatus = computed(() => {
-      const { PERFORMANCE_THRESHOLDS } = FPS_CONSTANTS;
-      if (props.fps >= PERFORMANCE_THRESHOLDS.EXCELLENT) return '优秀';
-      if (props.fps >= PERFORMANCE_THRESHOLDS.GOOD) return '良好';
-      if (props.fps >= PERFORMANCE_THRESHOLDS.POOR) return '较差';
-      return '严重';
+    // 计算文字阴影颜色
+    const textShadowColor = computed(() => {
+      const fps = props.fps;
+      if (fps >= 55) {
+        return 'rgba(76, 175, 80, 0.8)'; // 绿色阴影
+      } else if (fps >= 50) {
+        return 'rgba(255, 215, 0, 0.8)'; // 黄色阴影
+      } else if (fps >= 45) {
+        return 'rgba(255, 152, 0, 0.8)'; // 橙色阴影
+      } else {
+        return 'rgba(244, 67, 54, 0.8)'; // 红色阴影
+      }
     });
 
     return {
       currentFps,
-      performanceClass,
-      performanceStatus
+      fpsColor,
+      textShadowColor
     };
   }
 });
 </script>
 
 <style scoped>
-.fps-indicator {
+.simple-fps {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px;
-  border-radius: 8px;
-  background: #2a2a2a;
-  color: white;
+  align-items: baseline;
+  gap: 6px;
   font-family: 'Courier New', monospace;
-  min-width: 80px;
-  transition: all 0.3s ease;
+  height: 100%;
+  align-items: center;
 }
 
-.fps-value {
-  font-size: 24px;
+.fps-number {
+  font-size: 48px;
   font-weight: bold;
   line-height: 1;
 }
 
 .fps-label {
-  font-size: 12px;
-  opacity: 0.7;
-  margin-top: 4px;
-}
-
-.performance-status {
-  font-size: 10px;
-  margin-top: 4px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* 性能状态样式 */
-.fps-indicator.excellent {
-  background: linear-gradient(135deg, #4caf50, #45a049);
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-}
-
-.fps-indicator.good {
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
-}
-
-.fps-indicator.poor {
-  background: linear-gradient(135deg, #ff5722, #e64a19);
-  box-shadow: 0 2px 8px rgba(255, 87, 34, 0.3);
-}
-
-.fps-indicator.critical {
-  background: linear-gradient(135deg, #f44336, #d32f2f);
-  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
+  font-size: 16px;
+  opacity: 0.9;
+  font-weight: 500;
 }
 </style> 

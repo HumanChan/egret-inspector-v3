@@ -16,6 +16,7 @@ dist/
 .idea/
 *.swp
 *.swo
+.tasks/
 
 # OS files
 .DS_Store

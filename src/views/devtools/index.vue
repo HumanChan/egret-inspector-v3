@@ -1,68 +1,74 @@
 <template>
   <div id="egret-inspector-panel">
-    <div class="header">
-      <div class="header-left">
-        <div class="title-row">
-          <h1>Egret Inspector</h1>
-          <span class="engine-version" v-if="engineDetected">Egret Version: {{ engineVersion }}</span>
-        </div>
+    <!-- 顶部区域 -->
+    <div class="top-section">
+      <div class="top-left">
+        <TopFps />
       </div>
-      <div class="status">
-        <span :class="['status-indicator', connectionStatus]">
-          {{ connectionStatusText }}
-        </span>
+      <div class="top-right">
+        <div class="version-info" v-if="engineDetected">
+          <span class="engine-version">Egret Version: {{ engineVersion }}</span>
+        </div>
+        <div class="status">
+          <span :class="['status-indicator', connectionStatus]">
+            {{ connectionStatusText }}
+          </span>
+        </div>
       </div>
     </div>
     
-    <div class="content">
-      <div class="tabs">
-        <button 
-          @click="activeTab = 'hierarchy'" 
-          :class="{ active: activeTab === 'hierarchy' }"
-          class="tab-btn"
-        >
-          层级结构
-        </button>
-        <button 
-          @click="activeTab = 'fps'" 
-          :class="{ active: activeTab === 'fps' }"
-          class="tab-btn"
-        >
-          FPS 监控
-        </button>
-      </div>
-
-      <div class="main-content" v-if="treeData && treeData.nodes && activeTab === 'hierarchy'">
-        <!-- Hierarchy Section -->
-        <div class="hierarchy-section">
-          <Hierarchy 
-            :treeData="convertedTreeData" 
-            @node-select="handleNodeSelect"
-            @node-unselect="handleNodeUnselect"
-            @node-visibility-toggle="handleNodeVisibilityToggle"
-          />
+    <!-- 主内容区域 -->
+    <div class="main-section">
+      <div class="left-panel">
+        <div class="tabs">
+          <button 
+            @click="activeTab = 'hierarchy'" 
+            :class="{ active: activeTab === 'hierarchy' }"
+            class="tab-btn"
+          >
+            节点树
+          </button>
+          <button 
+            @click="activeTab = 'resource'" 
+            :class="{ active: activeTab === 'resource' }"
+            class="tab-btn"
+          >
+            资源分析
+          </button>
         </div>
-        
-        <!-- Properties Section -->
-        <div class="properties-section">
-          <Properties 
-            :selectedNode="selectedNode"
-            :properties="nodeProperties"
-            @property-update="handlePropertyUpdate"
-          />
+
+        <div class="tab-content">
+          <!-- 节点树面板 -->
+          <div v-if="activeTab === 'hierarchy' && treeData && treeData.nodes" class="hierarchy-section">
+            <Hierarchy 
+              :treeData="convertedTreeData" 
+              @node-select="handleNodeSelect"
+              @node-unselect="handleNodeUnselect"
+              @node-visibility-toggle="handleNodeVisibilityToggle"
+            />
+          </div>
+          
+          <!-- 资源分析面板 -->
+          <div v-if="activeTab === 'resource'" class="resource-section">
+            <ResourcePanel />
+          </div>
         </div>
       </div>
-
-      <div class="main-content" v-if="activeTab === 'fps'">
-        <!-- FPS Panel -->
-        <FpsPanel />
+      
+      <!-- 右侧属性面板 -->
+      <div class="right-panel">
+        <Properties 
+          :selectedNode="selectedNode"
+          :properties="nodeProperties"
+          @property-update="handlePropertyUpdate"
+        />
       </div>
+    </div>
 
-      <div class="section" v-if="errorMessage">
-        <h2>Error</h2>
-        <div class="error">
-          {{ errorMessage }}
-        </div>
+    <div class="section" v-if="errorMessage">
+      <h2>Error</h2>
+      <div class="error">
+        {{ errorMessage }}
       </div>
     </div>
   </div>
@@ -75,14 +81,16 @@ import { Msg } from '../../core/types';
 import { TreeData, Property } from './data';
 import Hierarchy from './hierarchy.vue';
 import Properties from './properties.vue';
-import FpsPanel from './fps-panel.vue';
+import TopFps from './components/top-fps.vue';
+import ResourcePanel from './resource-panel.vue';
 
 export default defineComponent({
   name: 'EgretInspectorPanel',
   components: {
     Hierarchy,
     Properties,
-    FpsPanel
+    TopFps,
+    ResourcePanel
   },
   setup() {
     const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('connecting');
@@ -95,7 +103,7 @@ export default defineComponent({
     const errorMessage = ref('');
     const selectedNode = ref<TreeData | null>(null);
     const nodeProperties = ref<Property[]>([]);
-    const activeTab = ref<'hierarchy' | 'fps'>('hierarchy');
+    const activeTab = ref<'hierarchy' | 'resource'>('hierarchy');
 
     // 转换树数据为cc-ui需要的格式
     const convertedTreeData = computed(() => {
@@ -155,6 +163,11 @@ export default defineComponent({
           setTimeout(() => {
             requestTreeInfo();
           }, 20);
+          
+          // 引擎检测成功后自动开始FPS监控
+          setTimeout(() => {
+            bridge.send(Msg.RequestFpsData, { enable: true });
+          }, 50);
         }
       }
     };
@@ -347,39 +360,49 @@ export default defineComponent({
   background: #2d2d30;
   min-height: 100vh;
   color: #cccccc;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-}
-
-.header-left {
   display: flex;
   flex-direction: column;
+  height: 100vh;
+}
+
+/* 顶部区域 */
+.top-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  height: 60px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.top-left {
+  flex: 2;
+  min-width: 0;
+}
+
+.top-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  min-width: 0;
+}
+
+.version-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 8px;
 }
 
-.title-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 18px;
-  color: #cccccc;
-}
-
 .engine-version {
-  padding: 2px 6px;
+  padding: 4px 8px;
   background: #3e3e42;
-  border-radius: 3px;
+  border-radius: 4px;
   color: #cccccc;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .status-indicator {
@@ -387,6 +410,7 @@ export default defineComponent({
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
+  text-align: center;
 }
 
 .status-indicator.connected {
@@ -404,10 +428,26 @@ export default defineComponent({
   color: #ffffff;
 }
 
-.content {
+/* 主内容区域 */
+.main-section {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  min-height: 0;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.left-panel {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px);
+  min-width: 0;
+}
+
+.right-panel {
+  flex: 1;
+  min-width: 0;
 }
 
 .tabs {
@@ -433,14 +473,13 @@ export default defineComponent({
   background: #252526;
   border-bottom: 1px solid #252526;
   border-color: #252526;
-  color: #4caf50; /* Highlight color for active tab */
+  color: #4caf50;
 }
 
-.main-content {
-  display: flex;
+.tab-content {
   flex: 1;
-  gap: 8px;
-  height: 100%;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
 }
 
@@ -453,14 +492,12 @@ export default defineComponent({
   min-height: 0;
 }
 
-.properties-section {
+.resource-section {
   flex: 1;
   border: 1px solid #3e3e42;
   border-radius: 4px;
   overflow: hidden;
   background: #252526;
-  display: flex;
-  flex-direction: column;
   min-height: 0;
 }
 
