@@ -382,12 +382,14 @@ export default defineComponent({
   background: #252526;
   color: #cccccc;
   min-height: 0;
+  overflow: hidden;
 }
 
 .properties-header {
   padding: 12px 16px;
   border-bottom: 1px solid #3e3e42;
   background: #2d2d30;
+  flex-shrink: 0;
 }
 
 .header-top {

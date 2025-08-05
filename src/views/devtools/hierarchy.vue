@@ -1,19 +1,17 @@
 <template>
   <div class="hierarchy-panel">
-    <CCDock name="Hierarchy">
-      <CCTree 
-        ref="elTree" 
-        :value="treeDataWithVisible" 
-        :expand-keys="expandedKeys" 
-        :default-expand-all="false"
-        :search="true"
-        @node-expand="onNodeExpand" 
-        @node-collapse="onNodeCollapse" 
-        @node-click="handleNodeClick" 
-        @node-unclick="handleNodeUnclick"
-        style="flex: 1"
-      />
-    </CCDock>
+    <CCTree 
+      ref="elTree" 
+      :value="treeDataWithVisible" 
+      :expand-keys="expandedKeys" 
+      :default-expand-all="false"
+      :search="true"
+      @node-expand="onNodeExpand" 
+      @node-collapse="onNodeCollapse" 
+      @node-click="handleNodeClick" 
+      @node-unclick="handleNodeUnclick"
+      style="flex: 1"
+    />
   </div>
 </template>
 
@@ -22,11 +20,11 @@ import ccui from "@xuyanfeng/cc-ui";
 import { defineComponent, ref, nextTick, computed } from "vue";
 import { TreeData } from "./data";
 
-const { CCTree, CCDock } = ccui.components;
+const { CCTree } = ccui.components;
 
 export default defineComponent({
   name: "Hierarchy",
-  components: { CCTree, CCDock },
+  components: { CCTree },
   props: {
     treeData: {
       type: Array as () => TreeData[],
@@ -60,8 +58,6 @@ export default defineComponent({
       
       return addVisibleClass(props.treeData);
     });
-
-
 
     // 节点展开事件
     const onNodeExpand = (data: TreeData) => {
@@ -171,8 +167,6 @@ export default defineComponent({
   scrollbar-color: #3e3e42 #2d2d30;
 }
 
-
-
 /* 根据节点visible状态设置透明度 */
 .hierarchy-panel :deep(.cc-tree-node) {
   opacity: 1;
@@ -182,6 +176,4 @@ export default defineComponent({
 .hierarchy-panel :deep(.cc-tree-node[data-visible="false"]) {
   opacity: 0.5;
 }
-
-
 </style> 

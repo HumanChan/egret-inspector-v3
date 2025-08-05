@@ -19,7 +19,7 @@
     
     <!-- 主内容区域 -->
     <div class="main-section">
-      <div class="left-panel">
+      <div class="content-panel">
         <div class="tabs">
           <button 
             @click="activeTab = 'hierarchy'" 
@@ -40,12 +40,25 @@
         <div class="tab-content">
           <!-- 节点树面板 -->
           <div v-if="activeTab === 'hierarchy' && treeData && treeData.nodes" class="hierarchy-section">
-            <Hierarchy 
-              :treeData="convertedTreeData" 
-              @node-select="handleNodeSelect"
-              @node-unselect="handleNodeUnselect"
-              @node-visibility-toggle="handleNodeVisibilityToggle"
-            />
+            <div class="hierarchy-layout">
+              <!-- 左侧节点树 -->
+              <div class="hierarchy-left">
+                <Hierarchy 
+                  :treeData="convertedTreeData" 
+                  @node-select="handleNodeSelect"
+                  @node-unselect="handleNodeUnselect"
+                  @node-visibility-toggle="handleNodeVisibilityToggle"
+                />
+              </div>
+              <!-- 右侧属性面板 -->
+              <div class="hierarchy-right">
+                <Properties 
+                  :selectedNode="selectedNode"
+                  :properties="nodeProperties"
+                  @property-update="handlePropertyUpdate"
+                />
+              </div>
+            </div>
           </div>
           
           <!-- 资源分析面板 -->
@@ -53,15 +66,6 @@
             <ResourcePanel />
           </div>
         </div>
-      </div>
-      
-      <!-- 右侧属性面板 -->
-      <div class="right-panel">
-        <Properties 
-          :selectedNode="selectedNode"
-          :properties="nodeProperties"
-          @property-update="handlePropertyUpdate"
-        />
       </div>
     </div>
 
@@ -432,21 +436,15 @@ export default defineComponent({
 .main-section {
   display: flex;
   flex: 1;
-  gap: 16px;
   min-height: 0;
   overflow: hidden;
   margin-top: 4px;
 }
 
-.left-panel {
+.content-panel {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-}
-
-.right-panel {
-  flex: 1;
   min-width: 0;
 }
 
@@ -490,6 +488,24 @@ export default defineComponent({
   overflow: hidden;
   background: #252526;
   min-height: 0;
+}
+
+.hierarchy-layout {
+  display: flex;
+  height: 100%;
+}
+
+.hierarchy-left {
+  flex: 0 0 40%;
+  min-width: 0;
+  border-right: 1px solid #3e3e42;
+  overflow-y: auto;
+}
+
+.hierarchy-right {
+  flex: 0 0 60%;
+  min-width: 0;
+  overflow-y: auto;
 }
 
 .resource-section {
